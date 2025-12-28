@@ -1,0 +1,41 @@
+name: Scheduled Scrape
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'  # Every 12 hours
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        market: [IT, FR, DE, ES, NL, PL, BE, AT, PT]
+      max-parallel: 3  # Limit concurrent jobs to avoid rate limiting
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: ./scraper
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Run scraper for ${{ matrix.market }}
+        working-directory: ./scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          python -m src.main --market ${{ matrix.market }} --category women/dresses --pages 10
+          python -m src.main --market ${{ matrix.market }} --category women/shirts --pages 10
+          python -m src.main --market ${{ matrix.market }} --category men/jeans --pages 10

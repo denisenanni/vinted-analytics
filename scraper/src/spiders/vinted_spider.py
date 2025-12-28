@@ -11,10 +11,32 @@ class VintedSpider:
         "FR": "https://www.vinted.fr",
         "DE": "https://www.vinted.de",
         "ES": "https://www.vinted.es",
+        "NL": "https://www.vinted.nl",
+        "PL": "https://www.vinted.pl",
+        "BE": "https://www.vinted.be",
+        "AT": "https://www.vinted.at",
+        "PT": "https://www.vinted.pt",
     }
 
-    CATEGORIES = {
-        "women/dresses": "/vetements?catalog[]=1904",  # Women's dresses
+    # Catalog IDs are universal, slugs vary by market language
+    # Format: /catalog/{id}-{slug}
+    CATALOG_IDS = {
+        "women/dresses": 1904,
+        "women/shirts": 1903,
+        "men/jeans": 2053,
+    }
+
+    # Localized slugs per market
+    CATEGORY_SLUGS = {
+        "IT": {"women/dresses": "vestiti", "women/shirts": "camicie", "men/jeans": "jeans"},
+        "FR": {"women/dresses": "robes", "women/shirts": "chemises", "men/jeans": "jeans"},
+        "DE": {"women/dresses": "kleider", "women/shirts": "hemden", "men/jeans": "jeans"},
+        "ES": {"women/dresses": "vestidos", "women/shirts": "camisas", "men/jeans": "jeans"},
+        "NL": {"women/dresses": "jurken", "women/shirts": "shirts", "men/jeans": "jeans"},
+        "PL": {"women/dresses": "sukienki", "women/shirts": "koszule", "men/jeans": "jeans"},
+        "BE": {"women/dresses": "robes", "women/shirts": "chemises", "men/jeans": "jeans"},
+        "AT": {"women/dresses": "kleider", "women/shirts": "hemden", "men/jeans": "jeans"},
+        "PT": {"women/dresses": "vestidos", "women/shirts": "camisas", "men/jeans": "jeans"},
     }
 
     def __init__(self, market: str = "IT"):
@@ -25,19 +47,24 @@ class VintedSpider:
         delay = random.uniform(min_sec, max_sec)
         await asyncio.sleep(delay)
 
+    def _get_category_url(self, category: str, page_num: int = 1) -> str:
+        catalog_id = self.CATALOG_IDS.get(category, self.CATALOG_IDS["women/dresses"])
+        slugs = self.CATEGORY_SLUGS.get(self.market, self.CATEGORY_SLUGS["IT"])
+        slug = slugs.get(category, slugs["women/dresses"])
+        return f"{self.base_url}/catalog/{catalog_id}-{slug}?page={page_num}"
+
     async def scrape_listing_page(self, page: Page, category: str, page_num: int = 1) -> List[VintedItem]:
-        category_path = self.CATEGORIES.get(category, self.CATEGORIES["women/dresses"])
-        url = f"{self.base_url}{category_path}&page={page_num}"
+        url = self._get_category_url(category, page_num)
 
         print(f"Scraping: {url}")
-        await page.goto(url, wait_until="networkidle")
-        await self.random_delay(1, 2)
+        await page.goto(url, wait_until="domcontentloaded", timeout=60000)
+        await self.random_delay(2, 3)
 
         items = []
 
         # Wait for item cards to load
         try:
-            await page.wait_for_selector('[data-testid="grid-item"]', timeout=10000)
+            await page.wait_for_selector('[data-testid="grid-item"]', timeout=20000)
         except Exception:
             print(f"No items found on page {page_num}")
             return items

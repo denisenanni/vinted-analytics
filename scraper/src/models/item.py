@@ -1,9 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
 
 
 class VintedItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     vinted_id: str
     title: str
     price: float
@@ -16,6 +18,3 @@ class VintedItem(BaseModel):
     market: str = "IT"
     category: str
     scraped_at: datetime = datetime.now()
-
-    class Config:
-        from_attributes = True

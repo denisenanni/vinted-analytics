@@ -1,7 +1,7 @@
 import asyncio
 import argparse
 from .spiders.vinted_spider import VintedSpider
-from .storage.database import init_db, save_items, get_item_count
+from .storage.database import init_db, save_items, get_stats, mark_sold_items
 
 
 async def main(market: str = "IT", category: str = "women/dresses", pages: int = 3):
@@ -25,15 +25,28 @@ async def main(market: str = "IT", category: str = "women/dresses", pages: int =
     if items:
         await save_items(items)
 
+        # Mark items as sold if they disappeared (only if we scraped enough pages)
+        if pages >= 3:
+            active_ids = [item.vinted_id for item in items]
+            await mark_sold_items(market, category, active_ids)
+
     # Show stats
-    total_count = await get_item_count()
-    print(f"Total items in database: {total_count}")
+    stats = await get_stats()
+    print(f"\nDatabase stats:")
+    print(f"  Total items: {stats['total']}")
+    print(f"  Active: {stats['active']}")
+    print(f"  Sold: {stats['sold']}")
+    print(f"  Price changes tracked: {stats['price_changes']}")
+
+
+MARKETS = ["IT", "FR", "DE", "ES", "NL", "PL", "BE", "AT", "PT"]
+CATEGORIES = ["women/dresses", "women/shirts", "men/jeans"]
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Vinted Scraper")
-    parser.add_argument("--market", "-m", default="IT", choices=["IT", "FR", "DE", "ES"], help="Market to scrape")
-    parser.add_argument("--category", "-c", default="women/dresses", help="Category to scrape")
+    parser.add_argument("--market", "-m", default="IT", choices=MARKETS, help="Market to scrape")
+    parser.add_argument("--category", "-c", default="women/dresses", choices=CATEGORIES, help="Category to scrape")
     parser.add_argument("--pages", "-p", type=int, default=3, help="Number of pages to scrape")
 
     args = parser.parse_args()
