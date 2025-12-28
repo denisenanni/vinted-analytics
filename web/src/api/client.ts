@@ -40,18 +40,25 @@ export interface LookupResponse {
   }>;
 }
 
+export interface TrendingItem {
+  vinted_id: string;
+  title: string;
+  price: number;
+  brand: string | null;
+  url: string | null;
+  image_url: string | null;
+  favorites: number;
+  market: string;
+  category: string | null;
+}
+
 export interface TrendsResponse {
   market: string;
   category: string;
   period: string;
   total_items: number;
   avg_price: number;
-  trending_brands: Array<{
-    brand: string;
-    count: number;
-    avg_price: number;
-    trend: string;
-  }>;
+  trending_items: TrendingItem[];
 }
 
 export interface CompareResponse {

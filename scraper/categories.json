@@ -1,0 +1,744 @@
+[
+  {
+    "id": 5,
+    "slug": "men",
+    "name": "Uomo",
+    "url": "/catalog/5-men",
+    "parent": "men"
+  },
+  {
+    "id": 30,
+    "slug": "activewear",
+    "name": "Abbigliamento sportivo",
+    "url": "/catalog/30-activewear",
+    "parent": "men"
+  },
+  {
+    "id": 32,
+    "slug": "suits-and-blazers",
+    "name": "Completi e blazer",
+    "url": "/catalog/32-suits-and-blazers",
+    "parent": "men"
+  },
+  {
+    "id": 34,
+    "slug": "trousers",
+    "name": "Pantaloni",
+    "url": "/catalog/34-trousers",
+    "parent": "men"
+  },
+  {
+    "id": 76,
+    "slug": "tops-and-t-shirts",
+    "name": "Camicie e t-shirt",
+    "url": "/catalog/76-tops-and-t-shirts",
+    "parent": "men"
+  },
+  {
+    "id": 79,
+    "slug": "jumpers-and-sweaters",
+    "name": "Maglioni e pullover",
+    "url": "/catalog/79-jumpers-and-sweaters",
+    "parent": "men"
+  },
+  {
+    "id": 80,
+    "slug": "shorts",
+    "name": "Pantaloncini",
+    "url": "/catalog/80-shorts",
+    "parent": "men"
+  },
+  {
+    "id": 82,
+    "slug": "accessories",
+    "name": "Accessori",
+    "url": "/catalog/82-accessories",
+    "parent": "men"
+  },
+  {
+    "id": 83,
+    "slug": "other-mens-clothing",
+    "name": "Altri capi da uomo",
+    "url": "/catalog/83-other-mens-clothing",
+    "parent": "men"
+  },
+  {
+    "id": 84,
+    "slug": "swimwear",
+    "name": "Costumi da bagno",
+    "url": "/catalog/84-swimwear",
+    "parent": "men"
+  },
+  {
+    "id": 85,
+    "slug": "socks-and-underwear",
+    "name": "Calzini e intimo",
+    "url": "/catalog/85-socks-and-underwear",
+    "parent": "men"
+  },
+  {
+    "id": 86,
+    "slug": "hats-and-caps",
+    "name": "Cappelli e berretti",
+    "url": "/catalog/86-hats-and-caps",
+    "parent": "men"
+  },
+  {
+    "id": 87,
+    "slug": "scarves-and-shawls",
+    "name": "Sciarpe e scialli",
+    "url": "/catalog/87-scarves-and-shawls",
+    "parent": "men"
+  },
+  {
+    "id": 91,
+    "slug": "gloves",
+    "name": "Guanti",
+    "url": "/catalog/91-gloves",
+    "parent": "men"
+  },
+  {
+    "id": 92,
+    "slug": "costumes-and-special-outfits",
+    "name": "Costumi e vestiti speciali",
+    "url": "/catalog/92-costumes-and-special-outfits",
+    "parent": "men"
+  },
+  {
+    "id": 94,
+    "slug": "bags-and-backpacks",
+    "name": "Borse e zaini",
+    "url": "/catalog/94-bags-and-backpacks",
+    "parent": "men"
+  },
+  {
+    "id": 95,
+    "slug": "jewellery",
+    "name": "Gioielli",
+    "url": "/catalog/95-jewellery",
+    "parent": "men"
+  },
+  {
+    "id": 96,
+    "slug": "belts",
+    "name": "Cinture",
+    "url": "/catalog/96-belts",
+    "parent": "men"
+  },
+  {
+    "id": 97,
+    "slug": "watches",
+    "name": "Orologi",
+    "url": "/catalog/97-watches",
+    "parent": "men"
+  },
+  {
+    "id": 98,
+    "slug": "sunglasses",
+    "name": "Occhiali da sole",
+    "url": "/catalog/98-sunglasses",
+    "parent": "men"
+  },
+  {
+    "id": 99,
+    "slug": "other-accessories",
+    "name": "Altro",
+    "url": "/catalog/99-other-accessories",
+    "parent": "men"
+  },
+  {
+    "id": 257,
+    "slug": "jeans",
+    "name": "Jeans",
+    "url": "/catalog/257-jeans",
+    "parent": "men"
+  },
+  {
+    "id": 1206,
+    "slug": "outerwear",
+    "name": "Abbigliamento da esterno",
+    "url": "/catalog/1206-outerwear",
+    "parent": "men"
+  },
+  {
+    "id": 1231,
+    "slug": "shoes",
+    "name": "Scarpe",
+    "url": "/catalog/1231-shoes",
+    "parent": "men"
+  },
+  {
+    "id": 1233,
+    "slug": "boots",
+    "name": "Stivali",
+    "url": "/catalog/1233-boots",
+    "parent": "men"
+  },
+  {
+    "id": 1238,
+    "slug": "formal-shoes",
+    "name": "Scarpe formali",
+    "url": "/catalog/1238-formal-shoes",
+    "parent": "men"
+  },
+  {
+    "id": 1242,
+    "slug": "trainers",
+    "name": "Scarpe da ginnastica",
+    "url": "/catalog/1242-trainers",
+    "parent": "men"
+  },
+  {
+    "id": 1452,
+    "slug": "sports-shoes",
+    "name": "Scarpe sportive",
+    "url": "/catalog/1452-sports-shoes",
+    "parent": "men"
+  },
+  {
+    "id": 2050,
+    "slug": "clothing",
+    "name": "Vestiti",
+    "url": "/catalog/2050-clothing",
+    "parent": "men"
+  },
+  {
+    "id": 2656,
+    "slug": "boat-shoes-loafers-and-moccasins",
+    "name": "Scarpe da barca, loafer e mocassini",
+    "url": "/catalog/2656-boat-shoes-loafers-and-moccasins",
+    "parent": "men"
+  },
+  {
+    "id": 2657,
+    "slug": "espadrilles",
+    "name": "Espadrillas",
+    "url": "/catalog/2657-espadrilles",
+    "parent": "men"
+  },
+  {
+    "id": 2659,
+    "slug": "slippers",
+    "name": "Pantofole",
+    "url": "/catalog/2659-slippers",
+    "parent": "men"
+  },
+  {
+    "id": 2910,
+    "slug": "sleepwear",
+    "name": "Pigiama",
+    "url": "/catalog/2910-sleepwear",
+    "parent": "men"
+  },
+  {
+    "id": 2956,
+    "slug": "ties-and-bow-ties",
+    "name": "Cravatte e papillon",
+    "url": "/catalog/2956-ties-and-bow-ties",
+    "parent": "men"
+  },
+  {
+    "id": 2957,
+    "slug": "pocket-squares",
+    "name": "Fazzoletto da taschino",
+    "url": "/catalog/2957-pocket-squares",
+    "parent": "men"
+  },
+  {
+    "id": 2958,
+    "slug": "handkerchiefs",
+    "name": "Fazzoletti",
+    "url": "/catalog/2958-handkerchiefs",
+    "parent": "men"
+  },
+  {
+    "id": 2959,
+    "slug": "braces-and-suspenders",
+    "name": "Bretelle",
+    "url": "/catalog/2959-braces-and-suspenders",
+    "parent": "men"
+  },
+  {
+    "id": 2960,
+    "slug": "bandanas-and-headscarves",
+    "name": "Bandana e fazzoletti per la testa",
+    "url": "/catalog/2960-bandanas-and-headscarves",
+    "parent": "men"
+  },
+  {
+    "id": 2968,
+    "slug": "sandals",
+    "name": "Sandali",
+    "url": "/catalog/2968-sandals",
+    "parent": "men"
+  },
+  {
+    "id": 2969,
+    "slug": "flip-flops-and-slides",
+    "name": "Infradito e ciabatte",
+    "url": "/catalog/2969-flip-flops-and-slides",
+    "parent": "men"
+  },
+  {
+    "id": 2970,
+    "slug": "clogs-and-mules",
+    "name": "Zoccoli e sabot",
+    "url": "/catalog/2970-clogs-and-mules",
+    "parent": "men"
+  },
+  {
+    "id": 4,
+    "slug": "clothing",
+    "name": "Vestiti",
+    "url": "/catalog/4-clothing",
+    "parent": "women"
+  },
+  {
+    "id": 8,
+    "slug": "suits-and-blazers",
+    "name": "Completi e blazer",
+    "url": "/catalog/8-suits-and-blazers",
+    "parent": "women"
+  },
+  {
+    "id": 9,
+    "slug": "trousers-and-leggings",
+    "name": "Pantaloni e leggings",
+    "url": "/catalog/9-trousers-and-leggings",
+    "parent": "women"
+  },
+  {
+    "id": 10,
+    "slug": "dresses",
+    "name": "Abiti",
+    "url": "/catalog/10-dresses",
+    "parent": "women"
+  },
+  {
+    "id": 11,
+    "slug": "skirts",
+    "name": "Gonne",
+    "url": "/catalog/11-skirts",
+    "parent": "women"
+  },
+  {
+    "id": 12,
+    "slug": "tops-and-t-shirts",
+    "name": "Top e t-shirt",
+    "url": "/catalog/12-tops-and-t-shirts",
+    "parent": "women"
+  },
+  {
+    "id": 13,
+    "slug": "jumpers-and-sweaters",
+    "name": "Maglioni e pullover",
+    "url": "/catalog/13-jumpers-and-sweaters",
+    "parent": "women"
+  },
+  {
+    "id": 15,
+    "slug": "shorts-and-cropped-trousers",
+    "name": "Pantaloncini e pantaloni corti",
+    "url": "/catalog/15-shorts-and-cropped-trousers",
+    "parent": "women"
+  },
+  {
+    "id": 16,
+    "slug": "shoes",
+    "name": "Scarpe",
+    "url": "/catalog/16-shoes",
+    "parent": "women"
+  },
+  {
+    "id": 18,
+    "slug": "other-clothing",
+    "name": "Altri capi di abbigliamento",
+    "url": "/catalog/18-other-clothing",
+    "parent": "women"
+  },
+  {
+    "id": 19,
+    "slug": "bags",
+    "name": "Borse",
+    "url": "/catalog/19-bags",
+    "parent": "women"
+  },
+  {
+    "id": 20,
+    "slug": "belts",
+    "name": "Cinture",
+    "url": "/catalog/20-belts",
+    "parent": "women"
+  },
+  {
+    "id": 21,
+    "slug": "jewellery",
+    "name": "Gioielli",
+    "url": "/catalog/21-jewellery",
+    "parent": "women"
+  },
+  {
+    "id": 22,
+    "slug": "watches",
+    "name": "Orologi",
+    "url": "/catalog/22-watches",
+    "parent": "women"
+  },
+  {
+    "id": 26,
+    "slug": "sunglasses",
+    "name": "Occhiali da sole",
+    "url": "/catalog/26-sunglasses",
+    "parent": "women"
+  },
+  {
+    "id": 28,
+    "slug": "swimwear",
+    "name": "Costumi da bagno",
+    "url": "/catalog/28-swimwear",
+    "parent": "women"
+  },
+  {
+    "id": 29,
+    "slug": "lingerie-and-nightwear",
+    "name": "Lingerie e indumenti da notte",
+    "url": "/catalog/29-lingerie-and-nightwear",
+    "parent": "women"
+  },
+  {
+    "id": 73,
+    "slug": "activewear",
+    "name": "Abbigliamento sportivo",
+    "url": "/catalog/73-activewear",
+    "parent": "women"
+  },
+  {
+    "id": 88,
+    "slug": "hats-and-caps",
+    "name": "Cappelli e berretti",
+    "url": "/catalog/88-hats-and-caps",
+    "parent": "women"
+  },
+  {
+    "id": 89,
+    "slug": "scarves-and-shawls",
+    "name": "Sciarpe e scialli",
+    "url": "/catalog/89-scarves-and-shawls",
+    "parent": "women"
+  },
+  {
+    "id": 90,
+    "slug": "gloves",
+    "name": "Guanti",
+    "url": "/catalog/90-gloves",
+    "parent": "women"
+  },
+  {
+    "id": 156,
+    "slug": "handbags",
+    "name": "Borsette",
+    "url": "/catalog/156-handbags",
+    "parent": "women"
+  },
+  {
+    "id": 157,
+    "slug": "backpacks",
+    "name": "Zaini",
+    "url": "/catalog/157-backpacks",
+    "parent": "women"
+  },
+  {
+    "id": 158,
+    "slug": "shoulder-bags",
+    "name": "Borse a spalla",
+    "url": "/catalog/158-shoulder-bags",
+    "parent": "women"
+  },
+  {
+    "id": 159,
+    "slug": "clutches",
+    "name": "Pochette",
+    "url": "/catalog/159-clutches",
+    "parent": "women"
+  },
+  {
+    "id": 160,
+    "slug": "wallets-and-purses",
+    "name": "Portafogli",
+    "url": "/catalog/160-wallets-and-purses",
+    "parent": "women"
+  },
+  {
+    "id": 161,
+    "slug": "makeup-bags",
+    "name": "Pochette per il make-up",
+    "url": "/catalog/161-makeup-bags",
+    "parent": "women"
+  },
+  {
+    "id": 183,
+    "slug": "jeans",
+    "name": "Jeans",
+    "url": "/catalog/183-jeans",
+    "parent": "women"
+  },
+  {
+    "id": 215,
+    "slug": "slippers",
+    "name": "Pantofole",
+    "url": "/catalog/215-slippers",
+    "parent": "women"
+  },
+  {
+    "id": 543,
+    "slug": "heels",
+    "name": "Scarpe con tacchi alti",
+    "url": "/catalog/543-heels",
+    "parent": "women"
+  },
+  {
+    "id": 552,
+    "slug": "tote-bags",
+    "name": "Borse tote",
+    "url": "/catalog/552-tote-bags",
+    "parent": "women"
+  },
+  {
+    "id": 1035,
+    "slug": "jumpsuits-and-playsuits",
+    "name": "Tute jumpsuit e playsuit",
+    "url": "/catalog/1035-jumpsuits-and-playsuits",
+    "parent": "women"
+  },
+  {
+    "id": 1037,
+    "slug": "outerwear",
+    "name": "Abbigliamento da esterno",
+    "url": "/catalog/1037-outerwear",
+    "parent": "women"
+  },
+  {
+    "id": 1049,
+    "slug": "boots",
+    "name": "Stivali",
+    "url": "/catalog/1049-boots",
+    "parent": "women"
+  },
+  {
+    "id": 1123,
+    "slug": "hair-accessories",
+    "name": "Accessori per capelli",
+    "url": "/catalog/1123-hair-accessories",
+    "parent": "women"
+  },
+  {
+    "id": 1140,
+    "slug": "other-accessories",
+    "name": "Altri accessori",
+    "url": "/catalog/1140-other-accessories",
+    "parent": "women"
+  },
+  {
+    "id": 1176,
+    "slug": "maternity-clothes",
+    "name": "Vestiti premaman",
+    "url": "/catalog/1176-maternity-clothes",
+    "parent": "women"
+  },
+  {
+    "id": 1187,
+    "slug": "accessories",
+    "name": "Accessori",
+    "url": "/catalog/1187-accessories",
+    "parent": "women"
+  },
+  {
+    "id": 1782,
+    "slug": "costumes-and-special-outfits",
+    "name": "Costumi e vestiti speciali",
+    "url": "/catalog/1782-costumes-and-special-outfits",
+    "parent": "women"
+  },
+  {
+    "id": 1784,
+    "slug": "satchels-and-messenger-bags",
+    "name": "Borse a cartella e messenger",
+    "url": "/catalog/1784-satchels-and-messenger-bags",
+    "parent": "women"
+  },
+  {
+    "id": 1848,
+    "slug": "bum-bags",
+    "name": "Marsupio",
+    "url": "/catalog/1848-bum-bags",
+    "parent": "women"
+  },
+  {
+    "id": 1849,
+    "slug": "holdalls-and-duffel-bags",
+    "name": "Borsoni e sacche da viaggio",
+    "url": "/catalog/1849-holdalls-and-duffel-bags",
+    "parent": "women"
+  },
+  {
+    "id": 1850,
+    "slug": "luggage-and-suitcases",
+    "name": "Bagagli e valigie",
+    "url": "/catalog/1850-luggage-and-suitcases",
+    "parent": "women"
+  },
+  {
+    "id": 1851,
+    "slug": "umbrellas",
+    "name": "Ombrelli",
+    "url": "/catalog/1851-umbrellas",
+    "parent": "women"
+  },
+  {
+    "id": 1852,
+    "slug": "keyrings",
+    "name": "Portachiavi",
+    "url": "/catalog/1852-keyrings",
+    "parent": "women"
+  },
+  {
+    "id": 1904,
+    "slug": "women",
+    "name": "Donna",
+    "url": "/catalog/1904-women",
+    "parent": "women"
+  },
+  {
+    "id": 2623,
+    "slug": "clogs-and-mules",
+    "name": "Zoccoli e sabot",
+    "url": "/catalog/2623-clogs-and-mules",
+    "parent": "women"
+  },
+  {
+    "id": 2630,
+    "slug": "sports-shoes",
+    "name": "Scarpe sportive",
+    "url": "/catalog/2630-sports-shoes",
+    "parent": "women"
+  },
+  {
+    "id": 2632,
+    "slug": "trainers",
+    "name": "Scarpe da ginnastica",
+    "url": "/catalog/2632-trainers",
+    "parent": "women"
+  },
+  {
+    "id": 2931,
+    "slug": "bandanas-and-headscarves",
+    "name": "Bandana e fazzoletti per la testa",
+    "url": "/catalog/2931-bandanas-and-headscarves",
+    "parent": "women"
+  },
+  {
+    "id": 2932,
+    "slug": "handkerchiefs",
+    "name": "Fazzoletti",
+    "url": "/catalog/2932-handkerchiefs",
+    "parent": "women"
+  },
+  {
+    "id": 2939,
+    "slug": "wristlets",
+    "name": "Pochette da polso",
+    "url": "/catalog/2939-wristlets",
+    "parent": "women"
+  },
+  {
+    "id": 2940,
+    "slug": "beach-bags",
+    "name": "Borse da spiaggia",
+    "url": "/catalog/2940-beach-bags",
+    "parent": "women"
+  },
+  {
+    "id": 2941,
+    "slug": "briefcases",
+    "name": "Valigette",
+    "url": "/catalog/2941-briefcases",
+    "parent": "women"
+  },
+  {
+    "id": 2942,
+    "slug": "bucket-bags",
+    "name": "Borse a secchiello",
+    "url": "/catalog/2942-bucket-bags",
+    "parent": "women"
+  },
+  {
+    "id": 2943,
+    "slug": "garment-bags",
+    "name": "Porta abiti",
+    "url": "/catalog/2943-garment-bags",
+    "parent": "women"
+  },
+  {
+    "id": 2944,
+    "slug": "gym-bags",
+    "name": "Borse da palestra",
+    "url": "/catalog/2944-gym-bags",
+    "parent": "women"
+  },
+  {
+    "id": 2945,
+    "slug": "hobo-bags",
+    "name": "Borse hobo",
+    "url": "/catalog/2945-hobo-bags",
+    "parent": "women"
+  },
+  {
+    "id": 2949,
+    "slug": "sandals",
+    "name": "Sandali",
+    "url": "/catalog/2949-sandals",
+    "parent": "women"
+  },
+  {
+    "id": 2950,
+    "slug": "mary-janes-and-t-bar-shoes",
+    "name": "Mary Jane e scarpe a T",
+    "url": "/catalog/2950-mary-janes-and-t-bar-shoes",
+    "parent": "women"
+  },
+  {
+    "id": 2951,
+    "slug": "lace-up-shoes",
+    "name": "Scarpe con i lacci",
+    "url": "/catalog/2951-lace-up-shoes",
+    "parent": "women"
+  },
+  {
+    "id": 2952,
+    "slug": "flip-flops-and-slides",
+    "name": "Infradito e ciabatte",
+    "url": "/catalog/2952-flip-flops-and-slides",
+    "parent": "women"
+  },
+  {
+    "id": 2953,
+    "slug": "espadrilles",
+    "name": "Espadrillas",
+    "url": "/catalog/2953-espadrilles",
+    "parent": "women"
+  },
+  {
+    "id": 2954,
+    "slug": "boat-shoes-loafers-and-moccasins",
+    "name": "Scarpe da barca, loafer e mocassini",
+    "url": "/catalog/2954-boat-shoes-loafers-and-moccasins",
+    "parent": "women"
+  },
+  {
+    "id": 2955,
+    "slug": "ballerinas",
+    "name": "Ballerine",
+    "url": "/catalog/2955-ballerinas",
+    "parent": "women"
+  }
+]

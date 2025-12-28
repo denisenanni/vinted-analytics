@@ -1,25 +1,16 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import type { TrendsResponse } from '../api/client';
 
 interface TrendsChartProps {
   data: TrendsResponse;
 }
 
-const COLORS = ['#8b5cf6', '#6366f1', '#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6', '#22c55e', '#84cc16', '#eab308', '#f97316'];
-
 export function TrendsChart({ data }: TrendsChartProps) {
-  const chartData = data.trending_brands.slice(0, 10).map((brand) => ({
-    name: brand.brand.length > 12 ? brand.brand.slice(0, 12) + '...' : brand.brand,
-    count: brand.count,
-    avgPrice: brand.avg_price,
-  }));
-
   return (
     <div className="trends-chart">
       <div className="chart-header">
-        <h3>Trending Brands</h3>
+        <h3>Trending Items</h3>
         <span className="chart-subtitle">
-          {data.market} · {data.category} · Last {data.period}
+          {data.market} · {data.category} · Last {data.period} · Sorted by favorites
         </span>
       </div>
 
@@ -34,29 +25,33 @@ export function TrendsChart({ data }: TrendsChartProps) {
         </div>
       </div>
 
-      {chartData.length > 0 ? (
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
-            <XAxis type="number" />
-            <YAxis type="category" dataKey="name" width={100} />
-            <Tooltip
-              formatter={(value, name) => {
-                const numValue = Number(value) || 0;
-                return [
-                  name === 'count' ? `${numValue} items` : `€${numValue.toFixed(2)}`,
-                  name === 'count' ? 'Items' : 'Avg Price',
-                ];
-              }}
-            />
-            <Bar dataKey="count" name="count">
-              {chartData.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      {data.trending_items.length > 0 ? (
+        <div className="items-grid">
+          {data.trending_items.map((item) => (
+            <a
+              key={item.vinted_id}
+              href={item.url || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="item-card"
+            >
+              {item.image_url && (
+                <img src={item.image_url} alt={item.title} className="item-image" />
+              )}
+              <div className="item-info">
+                <span className="item-title">{item.title}</span>
+                <span className="item-brand">{item.brand || 'Unknown brand'}</span>
+                <div className="item-meta">
+                  <span className="item-price">€{item.price.toFixed(2)}</span>
+                  <span className="item-market">{item.market}</span>
+                  <span className="item-favorites">♥ {item.favorites}</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
       ) : (
-        <p className="no-data">No trend data available</p>
+        <p className="no-data">No trending items available</p>
       )}
     </div>
   );

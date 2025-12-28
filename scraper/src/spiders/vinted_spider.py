@@ -18,26 +18,113 @@ class VintedSpider:
         "PT": "https://www.vinted.pt",
     }
 
-    # Catalog IDs are universal, slugs vary by market language
+    # Catalog IDs and slugs - IDs are universal across all markets
     # Format: /catalog/{id}-{slug}
     CATALOG_IDS = {
-        "women/dresses": 1904,
-        "women/shirts": 1903,
-        "men/jeans": 2053,
+        # Parent categories (all items in category)
+        "women/clothing": 4,      # All women's clothes
+        "men/clothing": 2050,     # All men's clothes
+        "women/shoes": 16,        # All women's shoes
+        "men/shoes": 1231,        # All men's shoes
+        "women/bags": 19,         # All women's bags
+        # Women's Clothing subcategories
+        "women/dresses": 10,
+        "women/tops-and-t-shirts": 12,
+        "women/jumpers-and-sweaters": 13,
+        "women/jeans": 183,
+        "women/trousers-and-leggings": 9,
+        "women/skirts": 11,
+        "women/shorts-and-cropped-trousers": 15,
+        "women/outerwear": 1037,
+        "women/suits-and-blazers": 8,
+        "women/jumpsuits-and-playsuits": 1035,
+        "women/activewear": 73,
+        "women/swimwear": 28,
+        "women/lingerie-and-nightwear": 29,
+        "women/maternity-clothes": 1176,
+        "women/costumes-and-special-outfits": 1782,
+        "women/other-clothing": 18,
+        # Women's Shoes
+        "women/boots": 1049,
+        "women/heels": 543,
+        "women/trainers": 2632,
+        "women/sandals": 2949,
+        "women/ballerinas": 2955,
+        "women/slippers": 215,
+        "women/sports-shoes": 2630,
+        "women/flip-flops-and-slides": 2952,
+        "women/espadrilles": 2953,
+        "women/boat-shoes-loafers-and-moccasins": 2954,
+        "women/clogs-and-mules": 2623,
+        "women/mary-janes-and-t-bar-shoes": 2950,
+        "women/lace-up-shoes": 2951,
+        # Women's Bags
+        "women/handbags": 156,
+        "women/backpacks": 157,
+        "women/shoulder-bags": 158,
+        "women/tote-bags": 552,
+        "women/clutches": 159,
+        "women/wallets-and-purses": 160,
+        "women/bucket-bags": 2942,
+        "women/hobo-bags": 2945,
+        "women/beach-bags": 2940,
+        "women/gym-bags": 2944,
+        "women/bum-bags": 1848,
+        "women/satchels-and-messenger-bags": 1784,
+        "women/makeup-bags": 161,
+        "women/luggage-and-suitcases": 1850,
+        # Women's Accessories
+        "women/jewellery": 21,
+        "women/watches": 22,
+        "women/sunglasses": 26,
+        "women/belts": 20,
+        "women/hats-and-caps": 88,
+        "women/scarves-and-shawls": 89,
+        "women/gloves": 90,
+        "women/hair-accessories": 1123,
+        "women/umbrellas": 1851,
+        "women/keyrings": 1852,
+        # Men's Clothing
+        "men/tops-and-t-shirts": 76,
+        "men/jumpers-and-sweaters": 79,
+        "men/jeans": 257,
+        "men/trousers": 34,
+        "men/shorts": 80,
+        "men/outerwear": 1206,
+        "men/suits-and-blazers": 32,
+        "men/activewear": 30,
+        "men/swimwear": 84,
+        "men/sleepwear": 2910,
+        "men/socks-and-underwear": 85,
+        "men/costumes-and-special-outfits": 92,
+        "men/other-mens-clothing": 83,
+        # Men's Shoes
+        "men/boots": 1233,
+        "men/trainers": 1242,
+        "men/formal-shoes": 1238,
+        "men/sandals": 2968,
+        "men/sports-shoes": 1452,
+        "men/slippers": 2659,
+        "men/flip-flops-and-slides": 2969,
+        "men/boat-shoes-loafers-and-moccasins": 2656,
+        "men/espadrilles": 2657,
+        "men/clogs-and-mules": 2970,
+        # Men's Accessories
+        "men/bags-and-backpacks": 94,
+        "men/jewellery": 95,
+        "men/watches": 97,
+        "men/sunglasses": 98,
+        "men/belts": 96,
+        "men/hats-and-caps": 86,
+        "men/scarves-and-shawls": 87,
+        "men/gloves": 91,
+        "men/ties-and-bow-ties": 2956,
+        "men/braces-and-suspenders": 2959,
     }
 
-    # Localized slugs per market
-    CATEGORY_SLUGS = {
-        "IT": {"women/dresses": "vestiti", "women/shirts": "camicie", "men/jeans": "jeans"},
-        "FR": {"women/dresses": "robes", "women/shirts": "chemises", "men/jeans": "jeans"},
-        "DE": {"women/dresses": "kleider", "women/shirts": "hemden", "men/jeans": "jeans"},
-        "ES": {"women/dresses": "vestidos", "women/shirts": "camisas", "men/jeans": "jeans"},
-        "NL": {"women/dresses": "jurken", "women/shirts": "shirts", "men/jeans": "jeans"},
-        "PL": {"women/dresses": "sukienki", "women/shirts": "koszule", "men/jeans": "jeans"},
-        "BE": {"women/dresses": "robes", "women/shirts": "chemises", "men/jeans": "jeans"},
-        "AT": {"women/dresses": "kleider", "women/shirts": "hemden", "men/jeans": "jeans"},
-        "PT": {"women/dresses": "vestidos", "women/shirts": "camisas", "men/jeans": "jeans"},
-    }
+    # Slug mappings per market (for URL construction)
+    # Using English slugs works for all markets via redirect
+    CATEGORY_SLUGS = {slug.split("/")[1]: slug.split("/")[1] for slug in CATALOG_IDS.keys()}
 
     def __init__(self, market: str = "IT"):
         self.market = market
@@ -48,10 +135,16 @@ class VintedSpider:
         await asyncio.sleep(delay)
 
     def _get_category_url(self, category: str, page_num: int = 1) -> str:
+        """Build catalog URL for any market. IDs are universal, slugs redirect automatically."""
         catalog_id = self.CATALOG_IDS.get(category, self.CATALOG_IDS["women/dresses"])
-        slugs = self.CATEGORY_SLUGS.get(self.market, self.CATEGORY_SLUGS["IT"])
-        slug = slugs.get(category, slugs["women/dresses"])
+        # Use the category slug from the key (e.g., "women/dresses" -> "dresses")
+        slug = category.split("/")[-1] if "/" in category else category
         return f"{self.base_url}/catalog/{catalog_id}-{slug}?page={page_num}"
+
+    @classmethod
+    def get_all_categories(cls) -> list:
+        """Return list of all available categories."""
+        return list(cls.CATALOG_IDS.keys())
 
     async def scrape_listing_page(self, page: Page, category: str, page_num: int = 1) -> List[VintedItem]:
         url = self._get_category_url(category, page_num)
@@ -119,15 +212,15 @@ class VintedSpider:
                 brand_part = alt_text.lower().split("brand:")[1]
                 brand = brand_part.split(",")[0].strip().title()
 
-        # Get favorites count
+        # Get favorites count (default to 0 if badge not shown)
         fav_el = await card.query_selector('[data-testid="favourite-count-text"]')
-        favorites = None
+        favorites = 0
         if fav_el:
             fav_text = await fav_el.inner_text()
             try:
                 favorites = int(fav_text)
             except ValueError:
-                pass
+                favorites = 0
 
         # Get size from description
         size = None

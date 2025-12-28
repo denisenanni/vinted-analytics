@@ -145,9 +145,10 @@ def compare_markets(
 def get_trends(
     market: str = "IT",
     category: Optional[str] = None,
-    period: str = "7d"
+    period: str = "7d",
+    limit: int = 20
 ) -> dict:
-    """Get trending brands and price movements."""
+    """Get trending items sorted by favorites/popularity."""
     supabase = get_supabase()
 
     # Calculate date threshold
@@ -159,46 +160,42 @@ def get_trends(
     if category:
         query = query.eq("category", category)
 
-    result = query.limit(1000).execute()
+    # Only get items with favorites > 0 (actually trending)
+    query = query.gt("favorites", 0)
+
+    # Order by favorites (trending = most popular)
+    result = query.order("favorites", desc=True).limit(500).execute()
     items = result.data
 
     if not items:
         return {
             "total_items": 0,
             "avg_price": 0,
-            "trending_brands": []
+            "trending_items": []
         }
-
-    # Aggregate by brand
-    brand_stats = {}
-    for item in items:
-        brand = item["brand"] or "Unknown"
-        if brand not in brand_stats:
-            brand_stats[brand] = {"count": 0, "prices": []}
-        brand_stats[brand]["count"] += 1
-        brand_stats[brand]["prices"].append(item["price"] or 0)
-
-    # Build trending list
-    trending = []
-    for brand, stats in brand_stats.items():
-        if stats["count"] >= 2:  # Minimum items to be considered
-            avg_price = sum(stats["prices"]) / len(stats["prices"])
-            trending.append({
-                "brand": brand,
-                "count": stats["count"],
-                "avg_price": round(avg_price, 2),
-                "trend": "stable"  # Would need historical data to calculate
-            })
-
-    trending.sort(key=lambda x: x["count"], reverse=True)
 
     prices = [i["price"] for i in items if i["price"]]
     avg_price = sum(prices) / len(prices) if prices else 0
 
+    # Format trending items
+    trending_items = []
+    for item in items[:limit]:
+        trending_items.append({
+            "vinted_id": item["vinted_id"],
+            "title": item["title"],
+            "price": item["price"],
+            "brand": item.get("brand"),
+            "url": item.get("url"),
+            "image_url": item.get("image_url"),
+            "favorites": item.get("favorites") or 0,
+            "market": item["market"],
+            "category": item.get("category")
+        })
+
     return {
         "total_items": len(items),
         "avg_price": round(avg_price, 2),
-        "trending_brands": trending[:10]
+        "trending_items": trending_items
     }
 
 

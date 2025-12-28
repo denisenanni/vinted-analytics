@@ -50,11 +50,16 @@ class CompareResponse(BaseModel):
     reason: str
 
 
-class TrendData(BaseModel):
-    brand: str
-    count: int
-    avg_price: float
-    trend: str  # up, down, stable
+class TrendingItem(BaseModel):
+    vinted_id: str
+    title: str
+    price: float
+    brand: Optional[str] = None
+    url: Optional[str] = None
+    image_url: Optional[str] = None
+    favorites: int
+    market: str
+    category: Optional[str] = None
 
 
 class TrendsResponse(BaseModel):
@@ -63,7 +68,7 @@ class TrendsResponse(BaseModel):
     period: str
     total_items: int
     avg_price: float
-    trending_brands: List[TrendData]
+    trending_items: List[TrendingItem]
 
 
 class SoldItem(BaseModel):

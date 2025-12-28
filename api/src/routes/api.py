@@ -71,15 +71,17 @@ async def compare(
 async def trends(
     market: str = Query("IT", description="Market code"),
     category: Optional[str] = Query(None, description="Category path"),
-    period: str = Query("7d", description="Time period: 7d, 30d, 90d")
+    period: str = Query("7d", description="Time period: 7d, 30d, 90d"),
+    limit: int = Query(20, ge=1, le=50, description="Number of trending items")
 ):
     """
-    Get trending brands and price movements for a market/category.
+    Get trending items (by favorites/popularity) for a market/category.
     """
     result = analytics.get_trends(
         market=market,
         category=category,
-        period=period
+        period=period,
+        limit=limit
     )
 
     return TrendsResponse(
@@ -88,7 +90,7 @@ async def trends(
         period=period,
         total_items=result["total_items"],
         avg_price=result["avg_price"],
-        trending_brands=result["trending_brands"]
+        trending_items=result["trending_items"]
     )
 
 
@@ -118,6 +120,54 @@ async def sold(
         avg_days_to_sell=result["avg_days_to_sell"],
         items=result["items"]
     )
+
+
+@router.get("/categories")
+async def categories():
+    """
+    Get all available categories organized by section.
+    """
+    return {
+        "categories": {
+            "women_clothing": [
+                "women/dresses", "women/tops-and-t-shirts", "women/jumpers-and-sweaters",
+                "women/jeans", "women/trousers-and-leggings", "women/skirts",
+                "women/shorts-and-cropped-trousers", "women/outerwear", "women/suits-and-blazers",
+                "women/jumpsuits-and-playsuits", "women/activewear", "women/swimwear",
+                "women/lingerie-and-nightwear", "women/maternity-clothes", "women/other-clothing"
+            ],
+            "women_shoes": [
+                "women/boots", "women/heels", "women/trainers", "women/sandals",
+                "women/ballerinas", "women/slippers", "women/sports-shoes",
+                "women/flip-flops-and-slides", "women/espadrilles"
+            ],
+            "women_bags": [
+                "women/handbags", "women/backpacks", "women/shoulder-bags", "women/tote-bags",
+                "women/clutches", "women/wallets-and-purses", "women/bucket-bags",
+                "women/hobo-bags", "women/beach-bags", "women/gym-bags", "women/bum-bags"
+            ],
+            "women_accessories": [
+                "women/jewellery", "women/watches", "women/sunglasses", "women/belts",
+                "women/hats-and-caps", "women/scarves-and-shawls", "women/gloves",
+                "women/hair-accessories", "women/umbrellas", "women/keyrings"
+            ],
+            "men_clothing": [
+                "men/tops-and-t-shirts", "men/jumpers-and-sweaters", "men/jeans",
+                "men/trousers", "men/shorts", "men/outerwear", "men/suits-and-blazers",
+                "men/activewear", "men/swimwear", "men/sleepwear", "men/socks-and-underwear"
+            ],
+            "men_shoes": [
+                "men/boots", "men/trainers", "men/formal-shoes", "men/sandals",
+                "men/sports-shoes", "men/slippers", "men/flip-flops-and-slides"
+            ],
+            "men_accessories": [
+                "men/bags-and-backpacks", "men/jewellery", "men/watches", "men/sunglasses",
+                "men/belts", "men/hats-and-caps", "men/scarves-and-shawls", "men/gloves",
+                "men/ties-and-bow-ties", "men/braces-and-suspenders"
+            ]
+        },
+        "markets": ["IT", "FR", "DE", "ES", "NL", "PL", "BE", "AT", "PT"]
+    }
 
 
 @router.get("/health")
