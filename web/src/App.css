@@ -415,6 +415,24 @@ body {
   border-bottom: 1px solid #e5e5e5;
 }
 
+.group-label.clickable {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.group-label.clickable:hover {
+  color: #0a9ea6;
+}
+
+.group-label.clickable input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #09b1ba;
+}
+
 .category-options {
   display: flex;
   flex-direction: column;

@@ -119,13 +119,32 @@ function App() {
 
   const handleMarketChange = (market: string) => {
     setSelectedMarket(market);
-    handleLoadTrends(market, selectedCategories, true);
+    setSelectedCategories([]); // Reset filters when changing market
+    handleLoadTrends(market, [], true);
   };
 
   const handleCategoryToggle = (category: string) => {
     const newSelected = selectedCategories.includes(category)
       ? selectedCategories.filter((c) => c !== category)
       : [...selectedCategories, category];
+    setSelectedCategories(newSelected);
+    handleLoadTrends(selectedMarket, newSelected, true);
+  };
+
+  const handleGroupToggle = (groupCategories: string[]) => {
+    // Check if all categories in the group are currently selected
+    const allSelected = groupCategories.every((c) => selectedCategories.includes(c));
+
+    let newSelected: string[];
+    if (allSelected) {
+      // Deselect all in group
+      newSelected = selectedCategories.filter((c) => !groupCategories.includes(c));
+    } else {
+      // Select all in group (add missing ones)
+      const toAdd = groupCategories.filter((c) => !selectedCategories.includes(c));
+      newSelected = [...selectedCategories, ...toAdd];
+    }
+
     setSelectedCategories(newSelected);
     handleLoadTrends(selectedMarket, newSelected, true);
   };
@@ -224,23 +243,41 @@ function App() {
                 {filterOpen && (
                   <>
                     <div className="category-groups">
-                      {Object.entries(categories.categories).map(([groupKey, groupCategories]) => (
-                        <div key={groupKey} className="category-group">
-                          <span className="group-label">{CATEGORY_LABELS[groupKey]}</span>
-                          <div className="category-options">
-                            {groupCategories.map((cat) => (
-                              <label key={cat} className="category-option">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedCategories.includes(cat)}
-                                  onChange={() => handleCategoryToggle(cat)}
-                                />
-                                <span>{formatCategoryName(cat)}</span>
-                              </label>
-                            ))}
+                      {Object.entries(categories.categories).map(([groupKey, groupCategories]) => {
+                        const allSelected = groupCategories.every((c) =>
+                          selectedCategories.includes(c)
+                        );
+                        const someSelected = groupCategories.some((c) =>
+                          selectedCategories.includes(c)
+                        );
+                        return (
+                          <div key={groupKey} className="category-group">
+                            <label className="group-label clickable">
+                              <input
+                                type="checkbox"
+                                checked={allSelected}
+                                ref={(el) => {
+                                  if (el) el.indeterminate = someSelected && !allSelected;
+                                }}
+                                onChange={() => handleGroupToggle(groupCategories)}
+                              />
+                              <span>{CATEGORY_LABELS[groupKey]}</span>
+                            </label>
+                            <div className="category-options">
+                              {groupCategories.map((cat) => (
+                                <label key={cat} className="category-option">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedCategories.includes(cat)}
+                                    onChange={() => handleCategoryToggle(cat)}
+                                  />
+                                  <span>{formatCategoryName(cat)}</span>
+                                </label>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                     {selectedCategories.length > 0 && (
                       <button

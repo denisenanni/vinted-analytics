@@ -258,15 +258,18 @@ class VintedSpider:
         )
 
     def _extract_price_from_text(self, text: str) -> float:
-        """Extract price from card text like '4,00 €' or '€4.00'"""
+        """Extract price from card text like '4,00 €' or '€4.00' or '25,00 zł'"""
         import re
-        # Look for price patterns: "4,00 €" or "€4.00"
+        # Look for price patterns for various currencies
         patterns = [
             r'(\d+[,\.]\d{2})\s*€',  # 4,00 € or 4.00 €
             r'€\s*(\d+[,\.]\d{2})',  # €4,00 or €4.00
+            r'(\d+[,\.]\d{2})\s*zł',  # 25,00 zł (Polish złoty)
+            r'zł\s*(\d+[,\.]\d{2})',  # zł25,00
+            r'(\d+[,\.]\d{2})\s*PLN',  # 25,00 PLN
         ]
         for pattern in patterns:
-            match = re.search(pattern, text)
+            match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 price_str = match.group(1).replace(',', '.')
                 try:

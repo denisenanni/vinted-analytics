@@ -43,7 +43,7 @@ MARKETS = ["IT", "FR", "DE", "ES", "NL", "PL", "BE", "AT", "PT"]
 
 # Scrape individual subcategories for accurate filtering
 CATEGORIES = [
-    # Women's clothing (most popular)
+    # Women's clothing
     "women/dresses",
     "women/tops-and-t-shirts",
     "women/jumpers-and-sweaters",
@@ -51,12 +51,38 @@ CATEGORIES = [
     "women/trousers-and-leggings",
     "women/skirts",
     "women/outerwear",
-    # Men's clothing (most popular)
+    "women/suits-and-blazers",
+    "women/activewear",
+    # Women's shoes
+    "women/boots",
+    "women/heels",
+    "women/trainers",
+    "women/sandals",
+    # Women's bags
+    "women/handbags",
+    "women/backpacks",
+    "women/shoulder-bags",
+    # Women's accessories
+    "women/jewellery",
+    "women/watches",
+    "women/sunglasses",
+    # Men's clothing
     "men/tops-and-t-shirts",
     "men/jumpers-and-sweaters",
     "men/jeans",
     "men/trousers",
     "men/outerwear",
+    "men/suits-and-blazers",
+    "men/activewear",
+    # Men's shoes
+    "men/boots",
+    "men/trainers",
+    "men/formal-shoes",
+    # Men's accessories
+    "men/bags-and-backpacks",
+    "men/jewellery",
+    "men/watches",
+    "men/sunglasses",
 ]
 
 

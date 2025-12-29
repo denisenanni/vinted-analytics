@@ -20,9 +20,10 @@ TEST_DB_PATH = Path(__file__).parent / "test_vinted.db"
 @pytest_asyncio.fixture
 async def test_db(monkeypatch):
     """Create a fresh test database for each test."""
-    # Override DB_PATH
+    # Override DB_PATH and force SQLite mode for tests
     import src.storage.database as db_module
     monkeypatch.setattr(db_module, "DB_PATH", TEST_DB_PATH)
+    monkeypatch.setattr(db_module, "USE_SUPABASE", False)
 
     # Remove existing test db
     if TEST_DB_PATH.exists():
