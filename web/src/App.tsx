@@ -47,6 +47,7 @@ function App() {
   const [selectedMarket, setSelectedMarket] = useState('IT');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [offset, setOffset] = useState(0);
+  const [filterOpen, setFilterOpen] = useState(false);
   const ITEMS_PER_PAGE = 20;
 
   useEffect(() => {
@@ -79,6 +80,7 @@ function App() {
       setLoading(true);
       setOffset(0);
       setTrendItems([]);
+      setTrends(null);
     } else {
       setLoadingMore(true);
     }
@@ -95,15 +97,16 @@ function App() {
         currentOffset
       );
       const data = response.data;
+      const newItems = data.trending_items || [];
 
       if (resetItems) {
-        setTrendItems(data.trending_items);
+        setTrendItems(newItems);
       } else {
-        setTrendItems((prev) => [...prev, ...data.trending_items]);
+        setTrendItems((prev) => [...prev, ...newItems]);
       }
 
       setTrends(data);
-      setHasMore(data.has_more);
+      setHasMore(data.has_more ?? false);
       setOffset(currentOffset + ITEMS_PER_PAGE);
     } catch (err) {
       setError('Failed to fetch trends. Make sure the API is running.');
@@ -207,37 +210,50 @@ function App() {
             </div>
 
             {categories && (
-              <div className="category-filter">
-                <label>Filter by Category:</label>
-                <div className="category-groups">
-                  {Object.entries(categories.categories).map(([groupKey, groupCategories]) => (
-                    <div key={groupKey} className="category-group">
-                      <span className="group-label">{CATEGORY_LABELS[groupKey]}</span>
-                      <div className="category-options">
-                        {groupCategories.map((cat) => (
-                          <label key={cat} className="category-option">
-                            <input
-                              type="checkbox"
-                              checked={selectedCategories.includes(cat)}
-                              onChange={() => handleCategoryToggle(cat)}
-                            />
-                            <span>{formatCategoryName(cat)}</span>
-                          </label>
-                        ))}
-                      </div>
+              <div className={`category-filter ${filterOpen ? 'open' : ''}`}>
+                <button
+                  className="filter-toggle"
+                  onClick={() => setFilterOpen(!filterOpen)}
+                >
+                  <span>
+                    Filter by Category
+                    {selectedCategories.length > 0 && ` (${selectedCategories.length} selected)`}
+                  </span>
+                  <span className="toggle-icon">{filterOpen ? '▲' : '▼'}</span>
+                </button>
+                {filterOpen && (
+                  <>
+                    <div className="category-groups">
+                      {Object.entries(categories.categories).map(([groupKey, groupCategories]) => (
+                        <div key={groupKey} className="category-group">
+                          <span className="group-label">{CATEGORY_LABELS[groupKey]}</span>
+                          <div className="category-options">
+                            {groupCategories.map((cat) => (
+                              <label key={cat} className="category-option">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedCategories.includes(cat)}
+                                  onChange={() => handleCategoryToggle(cat)}
+                                />
+                                <span>{formatCategoryName(cat)}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                {selectedCategories.length > 0 && (
-                  <button
-                    className="clear-filters"
-                    onClick={() => {
-                      setSelectedCategories([]);
-                      handleLoadTrends(selectedMarket, [], true);
-                    }}
-                  >
-                    Clear filters ({selectedCategories.length})
-                  </button>
+                    {selectedCategories.length > 0 && (
+                      <button
+                        className="clear-filters"
+                        onClick={() => {
+                          setSelectedCategories([]);
+                          handleLoadTrends(selectedMarket, [], true);
+                        }}
+                      >
+                        Clear filters ({selectedCategories.length})
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             )}

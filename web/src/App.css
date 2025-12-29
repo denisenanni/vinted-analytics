@@ -352,16 +352,41 @@ body {
 /* Category Filter */
 .category-filter {
   margin-bottom: 1.5rem;
-  padding: 1rem;
   background: #f9fafb;
   border-radius: 8px;
+  overflow: hidden;
 }
 
-.category-filter > label {
-  display: block;
+.filter-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: none;
+  border: none;
+  font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 1rem;
   color: #374151;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.filter-toggle:hover {
+  background: #f3f4f6;
+}
+
+.toggle-icon {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.category-filter.open .filter-toggle {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.category-filter.open .category-groups {
+  padding: 1rem;
 }
 
 .category-groups {
@@ -422,7 +447,7 @@ body {
 }
 
 .clear-filters {
-  margin-top: 1rem;
+  margin: 0 1rem 1rem 1rem;
   padding: 0.5rem 1rem;
   background: #fee2e2;
   color: #b91c1c;

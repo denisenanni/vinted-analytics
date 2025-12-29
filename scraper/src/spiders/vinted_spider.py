@@ -126,6 +126,9 @@ class VintedSpider:
     # Using English slugs works for all markets via redirect
     CATEGORY_SLUGS = {slug.split("/")[1]: slug.split("/")[1] for slug in CATALOG_IDS.keys()}
 
+    # Reverse mapping: catalog_id -> category name
+    CATALOG_ID_TO_CATEGORY = {v: k for k, v in CATALOG_IDS.items()}
+
     def __init__(self, market: str = "IT"):
         self.market = market
         self.base_url = self.BASE_URLS.get(market, self.BASE_URLS["IT"])
@@ -133,6 +136,7 @@ class VintedSpider:
     async def random_delay(self, min_sec: float = 2, max_sec: float = 5):
         delay = random.uniform(min_sec, max_sec)
         await asyncio.sleep(delay)
+
 
     def _get_category_url(self, category: str, page_num: int = 1) -> str:
         """Build catalog URL for any market. IDs are universal, slugs redirect automatically."""

@@ -10,7 +10,7 @@ export function TrendsChart({ data }: TrendsChartProps) {
       <div className="chart-header">
         <h3>Trending Items</h3>
         <span className="chart-subtitle">
-          {data.market} · {data.category} · Last {data.period} · Sorted by favorites
+          {data.market} · {data.categories?.join(', ') || 'All'} · Last {data.period} · Sorted by favorites
         </span>
       </div>
 
@@ -20,12 +20,12 @@ export function TrendsChart({ data }: TrendsChartProps) {
           <span className="chart-stat-label">Total Items</span>
         </div>
         <div className="chart-stat">
-          <span className="chart-stat-value">€{data.avg_price.toFixed(2)}</span>
+          <span className="chart-stat-value">€{(data.avg_price ?? 0).toFixed(2)}</span>
           <span className="chart-stat-label">Avg Price</span>
         </div>
       </div>
 
-      {data.trending_items.length > 0 ? (
+      {data.trending_items?.length > 0 ? (
         <div className="items-grid">
           {data.trending_items.map((item) => (
             <a
