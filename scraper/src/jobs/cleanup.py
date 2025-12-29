@@ -11,7 +11,7 @@ This script:
 
 import asyncio
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,7 +30,7 @@ def get_supabase():
 async def aggregate_daily_stats_supabase():
     """Aggregate stats into stats_daily table using Supabase."""
     supabase = get_supabase()
-    today = datetime.utcnow().date().isoformat()
+    today = datetime.now(timezone.utc).date().isoformat()
 
     # Get all unique market/category/brand combinations with their stats
     # Note: Supabase doesn't support complex aggregations directly,
@@ -53,7 +53,7 @@ async def aggregate_daily_stats_supabase():
         key = (item["market"], item["category"], item.get("brand"))
         groups[key].append(item)
 
-    yesterday = (datetime.utcnow() - timedelta(days=1)).isoformat()
+    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
     stats_to_insert = []
 
     for (market, category, brand), group_items in groups.items():
@@ -110,7 +110,7 @@ async def aggregate_daily_stats_supabase():
 async def cleanup_stale_items_supabase():
     """Delete active items not seen in 7 days."""
     supabase = get_supabase()
-    cutoff = (datetime.utcnow() - timedelta(days=7)).isoformat()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
 
     result = supabase.table("items").delete().eq("status", "active").lt("last_seen", cutoff).execute()
     deleted = len(result.data) if result.data else 0
@@ -121,7 +121,7 @@ async def cleanup_stale_items_supabase():
 async def cleanup_old_sold_items_supabase():
     """Delete sold items older than 90 days."""
     supabase = get_supabase()
-    cutoff = (datetime.utcnow() - timedelta(days=90)).isoformat()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
 
     result = supabase.table("items").delete().eq("status", "sold").lt("sold_at", cutoff).execute()
     deleted = len(result.data) if result.data else 0
@@ -132,7 +132,7 @@ async def cleanup_old_sold_items_supabase():
 async def cleanup_old_price_history_supabase():
     """Delete price history older than 90 days."""
     supabase = get_supabase()
-    cutoff = (datetime.utcnow() - timedelta(days=90)).isoformat()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
 
     result = supabase.table("price_history").delete().lt("recorded_at", cutoff).execute()
     deleted = len(result.data) if result.data else 0
@@ -177,7 +177,7 @@ DB_PATH = Path(__file__).parent.parent.parent / "data" / "vinted.db"
 
 async def aggregate_daily_stats_sqlite():
     """Aggregate stats for SQLite."""
-    today = datetime.utcnow().date().isoformat()
+    today = datetime.now(timezone.utc).date().isoformat()
     print(f"Aggregating stats for {today}...")
 
     async with aiosqlite.connect(DB_PATH) as db:
@@ -200,7 +200,7 @@ async def aggregate_daily_stats_sqlite():
             )
         """)
 
-        yesterday = (datetime.utcnow() - timedelta(days=1)).isoformat()
+        yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
 
         # Aggregate and insert stats
         await db.execute("""
@@ -231,7 +231,7 @@ async def aggregate_daily_stats_sqlite():
 
 async def cleanup_stale_items_sqlite():
     """Delete stale items from SQLite."""
-    cutoff = (datetime.utcnow() - timedelta(days=7)).isoformat()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
 
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute(
@@ -246,7 +246,7 @@ async def cleanup_stale_items_sqlite():
 
 async def cleanup_old_sold_items_sqlite():
     """Delete old sold items from SQLite."""
-    cutoff = (datetime.utcnow() - timedelta(days=90)).isoformat()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
 
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute(
@@ -261,7 +261,7 @@ async def cleanup_old_sold_items_sqlite():
 
 async def cleanup_old_price_history_sqlite():
     """Delete old price history from SQLite."""
-    cutoff = (datetime.utcnow() - timedelta(days=90)).isoformat()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
 
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute(
