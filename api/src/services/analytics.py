@@ -203,6 +203,83 @@ def get_trends(
     }
 
 
+def get_hot_categories() -> dict:
+    """Get the hottest (most trending) category for each market."""
+    supabase = get_supabase()
+    markets = ["IT", "FR", "DE", "ES", "NL", "PL", "BE", "AT", "PT"]
+
+    # Only include categories that are actively scraped and shown in the UI
+    allowed_categories = {
+        # Women's clothing
+        "women/dresses", "women/tops-and-t-shirts", "women/jumpers-and-sweaters",
+        "women/jeans", "women/trousers-and-leggings", "women/skirts",
+        "women/shorts-and-cropped-trousers", "women/outerwear", "women/suits-and-blazers",
+        "women/jumpsuits-and-playsuits", "women/activewear", "women/swimwear",
+        "women/lingerie-and-nightwear", "women/maternity-clothes", "women/other-clothing",
+        # Women's shoes
+        "women/boots", "women/heels", "women/trainers", "women/sandals",
+        "women/ballerinas", "women/slippers", "women/sports-shoes",
+        "women/flip-flops-and-slides", "women/espadrilles",
+        # Women's bags
+        "women/handbags", "women/backpacks", "women/shoulder-bags", "women/tote-bags",
+        "women/clutches", "women/wallets-and-purses", "women/bucket-bags",
+        "women/hobo-bags", "women/beach-bags", "women/gym-bags", "women/bum-bags",
+        # Men's clothing
+        "men/tops-and-t-shirts", "men/jumpers-and-sweaters", "men/jeans",
+        "men/trousers", "men/shorts", "men/outerwear", "men/suits-and-blazers",
+        "men/activewear", "men/swimwear", "men/sleepwear", "men/socks-and-underwear",
+        # Men's shoes
+        "men/boots", "men/trainers", "men/formal-shoes", "men/sandals",
+        "men/sports-shoes", "men/slippers", "men/flip-flops-and-slides",
+        # Men's accessories
+        "men/bags-and-backpacks",
+    }
+
+    # Get recent items with favorites
+    threshold = (datetime.now() - timedelta(days=7)).isoformat()
+
+    hot_categories = {}
+
+    for market in markets:
+        # Get items with favorites > 0 from last 7 days
+        result = supabase.table("items")\
+            .select("category, favorites")\
+            .eq("market", market)\
+            .gte("last_seen", threshold)\
+            .gt("favorites", 0)\
+            .execute()
+
+        items = result.data
+
+        if not items:
+            continue
+
+        # Aggregate favorites by category (only allowed categories)
+        category_stats = {}
+        for item in items:
+            cat = item.get("category")
+            if not cat:
+                continue
+            # Only include categories that are in the allowed list
+            if cat not in allowed_categories:
+                continue
+            if cat not in category_stats:
+                category_stats[cat] = {"total_favorites": 0, "count": 0}
+            category_stats[cat]["total_favorites"] += item.get("favorites") or 0
+            category_stats[cat]["count"] += 1
+
+        # Find category with highest total favorites
+        if category_stats:
+            hot_cat = max(category_stats.items(), key=lambda x: x[1]["total_favorites"])
+            hot_categories[market] = {
+                "category": hot_cat[0],
+                "total_favorites": hot_cat[1]["total_favorites"],
+                "item_count": hot_cat[1]["count"]
+            }
+
+    return {"hot_categories": hot_categories}
+
+
 def get_sold_items(
     brand: Optional[str] = None,
     category: Optional[str] = None,

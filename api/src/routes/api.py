@@ -176,6 +176,16 @@ async def categories():
     }
 
 
+@router.get("/hot-categories")
+async def hot_categories():
+    """
+    Get the hottest (most trending) category for each market.
+
+    Returns the category with most total favorites in the last 7 days per market.
+    """
+    return analytics.get_hot_categories()
+
+
 @router.get("/health")
 async def health():
     """Health check endpoint."""

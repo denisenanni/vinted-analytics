@@ -7,10 +7,12 @@ import {
   lookup,
   getTrends,
   getCategories,
+  getHotCategories,
   type LookupResponse,
   type TrendsResponse,
   type TrendingItem,
   type CategoriesResponse,
+  type HotCategoriesResponse,
 } from './api/client';
 import './App.css';
 
@@ -44,6 +46,7 @@ function App() {
 
   // Trends filters
   const [categories, setCategories] = useState<CategoriesResponse | null>(null);
+  const [hotCategories, setHotCategories] = useState<HotCategoriesResponse | null>(null);
   const [selectedMarket, setSelectedMarket] = useState('IT');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [offset, setOffset] = useState(0);
@@ -53,6 +56,9 @@ function App() {
   useEffect(() => {
     getCategories()
       .then((res) => setCategories(res.data))
+      .catch(console.error);
+    getHotCategories()
+      .then((res) => setHotCategories(res.data))
       .catch(console.error);
   }, []);
 
@@ -205,10 +211,7 @@ function App() {
             <div className="trends-controls">
               <div className="control-group">
                 <label>Market:</label>
-                <select
-                  onChange={(e) => handleMarketChange(e.target.value)}
-                  value={selectedMarket}
-                >
+                <div className="market-selector">
                   {[
                     { code: 'IT', name: 'Italy' },
                     { code: 'FR', name: 'France' },
@@ -219,12 +222,24 @@ function App() {
                     { code: 'BE', name: 'Belgium' },
                     { code: 'AT', name: 'Austria' },
                     { code: 'PT', name: 'Portugal' },
-                  ].map((m) => (
-                    <option key={m.code} value={m.code}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
+                  ].map((m) => {
+                    const hotCat = hotCategories?.hot_categories[m.code];
+                    const categoryName = hotCat ? formatCategoryName(hotCat.category) : '';
+                    return (
+                      <button
+                        key={m.code}
+                        className={`market-btn ${selectedMarket === m.code ? 'active' : ''}`}
+                        onClick={() => handleMarketChange(m.code)}
+                        title={hotCat ? `${hotCat.total_favorites} favorites` : m.name}
+                      >
+                        <span className="market-name">{m.name}</span>
+                        {hotCat && (
+                          <span className="hot-category">{categoryName}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 

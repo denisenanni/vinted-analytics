@@ -302,9 +302,21 @@ body {
 
 .trends-controls {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 0.75rem;
   margin-bottom: 1.5rem;
+}
+
+.trends-controls .control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.trends-controls .control-group > label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #666;
 }
 
 .trends-controls select {
@@ -312,6 +324,59 @@ body {
   border: 1px solid #e5e5e5;
   border-radius: 8px;
   font-size: 1rem;
+}
+
+/* Market Selector */
+.market-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.market-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.6rem 1rem;
+  background: #f3f4f6;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 90px;
+}
+
+.market-btn:hover {
+  background: #e5e7eb;
+}
+
+.market-btn.active {
+  background: #dbeafe;
+  border-color: #09b1ba;
+  color: #0369a1;
+}
+
+.market-btn .market-name {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.market-btn .hot-category {
+  font-size: 0.65rem;
+  color: #ef4444;
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 85px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.market-btn.active .hot-category {
+  color: #dc2626;
 }
 
 .trends-chart .chart-header {

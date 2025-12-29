@@ -115,3 +115,16 @@ export const getCategories = () =>
 
 export const compare = (brand?: string, category?: string, markets?: string) =>
   api.get<CompareResponse>('/api/compare', { params: { brand, category, markets } });
+
+export interface HotCategoryInfo {
+  category: string;
+  total_favorites: number;
+  item_count: number;
+}
+
+export interface HotCategoriesResponse {
+  hot_categories: Record<string, HotCategoryInfo>;
+}
+
+export const getHotCategories = () =>
+  api.get<HotCategoriesResponse>('/api/hot-categories');
