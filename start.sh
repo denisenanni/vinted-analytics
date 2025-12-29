@@ -15,14 +15,16 @@ echo ""
 
 # Start API
 echo "[API] Starting on http://localhost:8000"
+
 cd api && source venv/bin/activate && uvicorn src.main:app --reload &
 API_PID=$!
-cd ..
+
 
 sleep 2
 
 # Start Web
 echo "[WEB] Starting on http://localhost:5173"
+
 cd web && yarn dev &
 WEB_PID=$!
 cd ..

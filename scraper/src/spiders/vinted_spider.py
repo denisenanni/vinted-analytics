@@ -227,9 +227,18 @@ class VintedSpider:
         desc_el = await card.query_selector('[data-testid$="--description--content"]')
         if desc_el:
             desc_text = await desc_el.inner_text()
-            # Size is often in format "M / IT 42" or similar
-            if "/" in desc_text:
-                size = desc_text.split("·")[0].strip() if "·" in desc_text else desc_text.split("\n")[0].strip()
+            # Description format: "Brand\n\nS / IT 40 / EU 36 · Condition"
+            # Size patterns: "XS / IT 38", "M / 42", "L / IT 44 / EU 40", "36 / S"
+            import re
+            lines = [line.strip() for line in desc_text.split('\n') if line.strip()]
+            for line in lines:
+                # Remove condition part after "·"
+                clean_line = line.split('·')[0].strip()
+                # Match size patterns: starts with size letter OR contains "IT/EU" size numbers
+                size_pattern = r'^(XXS|XS|S|M|L|XL|XXL|XXXL|\d{2})\s*/'
+                if re.match(size_pattern, clean_line, re.IGNORECASE):
+                    size = clean_line
+                    break
 
         return VintedItem(
             vinted_id=vinted_id,

@@ -64,11 +64,12 @@ class TrendingItem(BaseModel):
 
 class TrendsResponse(BaseModel):
     market: str
-    category: str
+    categories: List[str]
     period: str
     total_items: int
     avg_price: float
     trending_items: List[TrendingItem]
+    has_more: bool = False
 
 
 class SoldItem(BaseModel):

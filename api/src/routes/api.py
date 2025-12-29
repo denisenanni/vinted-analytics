@@ -70,27 +70,33 @@ async def compare(
 @router.get("/trends", response_model=TrendsResponse)
 async def trends(
     market: str = Query("IT", description="Market code"),
-    category: Optional[str] = Query(None, description="Category path"),
+    categories: Optional[str] = Query(None, description="Comma-separated category paths"),
     period: str = Query("7d", description="Time period: 7d, 30d, 90d"),
-    limit: int = Query(20, ge=1, le=50, description="Number of trending items")
+    limit: int = Query(20, ge=1, le=100, description="Number of trending items"),
+    offset: int = Query(0, ge=0, description="Offset for pagination")
 ):
     """
     Get trending items (by favorites/popularity) for a market/category.
+    Supports multiple categories via comma-separated values.
     """
+    category_list = [c.strip() for c in categories.split(",")] if categories else []
+
     result = analytics.get_trends(
         market=market,
-        category=category,
+        categories=category_list if category_list else None,
         period=period,
-        limit=limit
+        limit=limit,
+        offset=offset
     )
 
     return TrendsResponse(
         market=market,
-        category=category or "all",
+        categories=category_list if category_list else ["all"],
         period=period,
         total_items=result["total_items"],
         avg_price=result["avg_price"],
-        trending_items=result["trending_items"]
+        trending_items=result["trending_items"],
+        has_more=result["has_more"]
     )
 
 

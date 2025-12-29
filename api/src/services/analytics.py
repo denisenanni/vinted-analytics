@@ -144,9 +144,10 @@ def compare_markets(
 
 def get_trends(
     market: str = "IT",
-    category: Optional[str] = None,
+    categories: Optional[List[str]] = None,
     period: str = "7d",
-    limit: int = 20
+    limit: int = 20,
+    offset: int = 0
 ) -> dict:
     """Get trending items sorted by favorites/popularity."""
     supabase = get_supabase()
@@ -155,23 +156,25 @@ def get_trends(
     days = int(period.replace("d", "")) if period.endswith("d") else 7
     threshold = (datetime.now() - timedelta(days=days)).isoformat()
 
-    query = supabase.table("items").select("*").eq("market", market).gte("last_seen", threshold)
+    query = supabase.table("items").select("*", count="exact").eq("market", market).gte("last_seen", threshold)
 
-    if category:
-        query = query.eq("category", category)
+    if categories and len(categories) > 0:
+        query = query.in_("category", categories)
 
     # Only get items with favorites > 0 (actually trending)
     query = query.gt("favorites", 0)
 
     # Order by favorites (trending = most popular)
-    result = query.order("favorites", desc=True).limit(500).execute()
+    result = query.order("favorites", desc=True).range(offset, offset + limit - 1).execute()
     items = result.data
+    total_count = result.count or len(items)
 
     if not items:
         return {
             "total_items": 0,
             "avg_price": 0,
-            "trending_items": []
+            "trending_items": [],
+            "has_more": False
         }
 
     prices = [i["price"] for i in items if i["price"]]
@@ -179,7 +182,7 @@ def get_trends(
 
     # Format trending items
     trending_items = []
-    for item in items[:limit]:
+    for item in items:
         trending_items.append({
             "vinted_id": item["vinted_id"],
             "title": item["title"],
@@ -193,9 +196,10 @@ def get_trends(
         })
 
     return {
-        "total_items": len(items),
+        "total_items": total_count,
         "avg_price": round(avg_price, 2),
-        "trending_items": trending_items
+        "trending_items": trending_items,
+        "has_more": offset + limit < total_count
     }
 
 

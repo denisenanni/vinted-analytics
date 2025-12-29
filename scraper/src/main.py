@@ -4,7 +4,7 @@ from .spiders.vinted_spider import VintedSpider
 from .storage.database import init_db, save_items, get_stats, mark_sold_items
 
 
-async def main(market: str = "IT", category: str = "women/dresses", pages: int = 3):
+async def main(market: str = "IT", category: str = "women/clothing", pages: int = 3):
     print(f"Starting Vinted scraper")
     print(f"  Market: {market}")
     print(f"  Category: {category}")
@@ -40,13 +40,13 @@ async def main(market: str = "IT", category: str = "women/dresses", pages: int =
 
 
 MARKETS = ["IT", "FR", "DE", "ES", "NL", "PL", "BE", "AT", "PT"]
-CATEGORIES = ["women/dresses", "women/shirts", "men/jeans"]
+CATEGORIES = ["women/clothing", "men/clothing"]
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Vinted Scraper")
     parser.add_argument("--market", "-m", default="IT", choices=MARKETS, help="Market to scrape")
-    parser.add_argument("--category", "-c", default="women/dresses", choices=CATEGORIES, help="Category to scrape")
+    parser.add_argument("--category", "-c", default="women/clothing", choices=CATEGORIES, help="Category to scrape")
     parser.add_argument("--pages", "-p", type=int, default=3, help="Number of pages to scrape")
 
     args = parser.parse_args()

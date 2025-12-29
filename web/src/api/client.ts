@@ -54,11 +54,12 @@ export interface TrendingItem {
 
 export interface TrendsResponse {
   market: string;
-  category: string;
+  categories: string[];
   period: string;
   total_items: number;
   avg_price: number;
   trending_items: TrendingItem[];
+  has_more: boolean;
 }
 
 export interface CompareResponse {
@@ -79,8 +80,38 @@ export interface CompareResponse {
 export const lookup = (params: LookupParams) =>
   api.get<LookupResponse>('/api/lookup', { params });
 
-export const getTrends = (market: string, category?: string, period = '7d') =>
-  api.get<TrendsResponse>('/api/trends', { params: { market, category, period } });
+export interface CategoriesResponse {
+  categories: {
+    women_clothing: string[];
+    women_shoes: string[];
+    women_bags: string[];
+    women_accessories: string[];
+    men_clothing: string[];
+    men_shoes: string[];
+    men_accessories: string[];
+  };
+  markets: string[];
+}
+
+export const getTrends = (
+  market: string,
+  categories?: string[],
+  period = '7d',
+  limit = 20,
+  offset = 0
+) =>
+  api.get<TrendsResponse>('/api/trends', {
+    params: {
+      market,
+      categories: categories?.length ? categories.join(',') : undefined,
+      period,
+      limit,
+      offset,
+    },
+  });
+
+export const getCategories = () =>
+  api.get<CategoriesResponse>('/api/categories');
 
 export const compare = (brand?: string, category?: string, markets?: string) =>
   api.get<CompareResponse>('/api/compare', { params: { brand, category, markets } });
