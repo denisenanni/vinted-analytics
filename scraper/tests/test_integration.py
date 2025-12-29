@@ -51,13 +51,13 @@ async def test_scrape_single_page_de():
 
 @pytest.mark.asyncio
 @pytest.mark.integration
-async def test_category_women_shirts():
-    """Test scraping women/shirts category."""
+async def test_category_women_tops():
+    """Test scraping women/tops-and-t-shirts category."""
     spider = VintedSpider(market="IT")
-    items = await spider.scrape(category="women/shirts", max_pages=1)
+    items = await spider.scrape(category="women/tops-and-t-shirts", max_pages=1)
 
     assert len(items) > 0
-    assert items[0].category == "women/shirts"
+    assert items[0].category == "women/tops-and-t-shirts"
 
 
 @pytest.mark.asyncio
