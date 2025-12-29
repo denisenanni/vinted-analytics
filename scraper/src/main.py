@@ -91,6 +91,12 @@ if __name__ == "__main__":
     parser.add_argument("--market", "-m", default="IT", choices=MARKETS, help="Market to scrape")
     parser.add_argument("--category", "-c", default="women/dresses", choices=CATEGORIES, help="Category to scrape")
     parser.add_argument("--pages", "-p", type=int, default=3, help="Number of pages to scrape")
+    parser.add_argument("--cleanup", action="store_true", help="Run daily cleanup job instead of scraping")
 
     args = parser.parse_args()
-    asyncio.run(main(args.market, args.category, args.pages))
+
+    if args.cleanup:
+        from .jobs.cleanup import run_daily_cleanup
+        asyncio.run(run_daily_cleanup())
+    else:
+        asyncio.run(main(args.market, args.category, args.pages))

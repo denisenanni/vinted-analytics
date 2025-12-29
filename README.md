@@ -81,66 +81,118 @@ Secondary use case: spot arbitrage/flipping opportunities if you want to go that
 
 ## Data Model
 
-### `markets`
-| Field | Type | Description |
-|-------|------|-------------|
-| id | uuid | Primary key |
-| code | string | IT, FR, DE, ES, NL, PL, BE, AT, PT |
-| base_url | string | https://www.vinted.it |
-| currency | string | EUR (all eurozone) |
-
 ### `items`
 | Field | Type | Description |
 |-------|------|-------------|
-| id | uuid | Primary key |
-| vinted_id | string | Vinted's item ID |
-| market_id | uuid | FK to markets |
-| title | string | Listing title |
-| brand | string | Brand name |
-| category | string | Category path |
-| size | string | Size if applicable |
-| condition | string | New, Like new, Good, etc. |
-| first_seen | timestamp | When we first scraped it |
-| last_seen | timestamp | Last time it appeared |
-| status | enum | active, sold, removed |
+| id | bigserial | Primary key |
+| vinted_id | text | Vinted's item ID (unique) |
+| title | text | Listing title |
+| price | decimal(10,2) | Current price |
+| currency | text | EUR (default) |
+| brand | text | Brand name |
+| size | text | Size if applicable |
+| url | text | Full item URL |
+| image_url | text | Primary image |
+| favorites | int | Favorite count |
+| market | text | Market code (IT, FR, etc.) |
+| category | text | Category path (women/dresses) |
+| scraped_at | timestamptz | When this data was scraped |
+| first_seen | timestamptz | When we first saw this item |
+| last_seen | timestamptz | Last time it appeared |
+| status | text | active, sold, removed |
+| sold_at | timestamptz | When marked as sold |
 
 ### `price_history`
 | Field | Type | Description |
 |-------|------|-------------|
-| id | uuid | Primary key |
-| item_id | uuid | FK to items |
-| price | decimal | Price at this point |
-| recorded_at | timestamp | When recorded |
+| id | bigserial | Primary key |
+| vinted_id | text | FK to items.vinted_id |
+| price | decimal(10,2) | Price at this point |
+| recorded_at | timestamptz | When recorded |
 
-### `snapshots`
+### `stats_daily` (aggregated metrics)
 | Field | Type | Description |
 |-------|------|-------------|
-| id | uuid | Primary key |
-| item_id | uuid | FK to items |
-| favorites | int | Favorite count |
-| views | int | View count (if available) |
-| recorded_at | timestamp | When recorded |
+| id | bigserial | Primary key |
+| date | date | Stats date |
+| market | text | Market code |
+| category | text | Category path |
+| brand | text | Brand (nullable for category-wide stats) |
+| active_count | int | Number of active listings |
+| sold_count | int | Items sold that day |
+| avg_price | decimal(10,2) | Average price |
+| min_price | decimal(10,2) | Minimum price |
+| max_price | decimal(10,2) | Maximum price |
+| avg_time_to_sell_days | decimal(5,1) | Average days to sell |
 
-### `market_activity` (for boost timing)
-| Field | Type | Description |
-|-------|------|-------------|
-| id | uuid | Primary key |
-| market_id | uuid | FK to markets |
-| category | string | Category path |
-| hour | int | Hour of day (0-23) |
-| day_of_week | int | 0=Monday, 6=Sunday |
-| avg_sales | decimal | Avg items sold in this slot |
-| avg_new_listings | int | Avg new listings |
-| recorded_week | date | Week this data covers |
+**Unique constraint:** `(date, market, category, brand)`
 
-### `searches` (V2)
-| Field | Type | Description |
-|-------|------|-------------|
-| id | uuid | Primary key |
-| market_id | uuid | FK to markets |
-| query | string | Search term |
-| results_count | int | Number of results |
-| recorded_at | timestamp | When recorded |
+### Indexes
+- `idx_items_vinted_id` — fast lookup by Vinted ID
+- `idx_items_market_category` — filter by market and category
+- `idx_items_status` — filter active/sold items
+- `idx_items_last_seen` — cleanup queries
+- `idx_price_history_vinted_id` — price history lookups
+- `idx_stats_daily_lookup` — stats queries by date/market/category
+
+---
+
+## Data Retention Policy
+
+To keep the database lean and ensure data freshness:
+
+| Data | Retention | Action |
+|------|-----------|--------|
+| Active items not seen in 7 days | Stale | Delete |
+| Sold items older than 90 days | Expired | Delete |
+| Price history older than 90 days | Expired | Delete |
+| Orphaned price history | Invalid | Delete |
+| Daily aggregated stats | Forever | Keep |
+
+### Cleanup SQL (runs daily)
+
+```sql
+-- 1. First, aggregate stats BEFORE cleanup
+INSERT INTO stats_daily (date, market, category, brand, active_count, sold_count, avg_price, min_price, max_price, avg_time_to_sell_days)
+SELECT 
+    CURRENT_DATE,
+    market,
+    category,
+    brand,
+    COUNT(*) FILTER (WHERE status = 'active') as active_count,
+    COUNT(*) FILTER (WHERE status = 'sold' AND sold_at >= CURRENT_DATE - INTERVAL '1 day') as sold_count,
+    AVG(price) as avg_price,
+    MIN(price) as min_price,
+    MAX(price) as max_price,
+    AVG(EXTRACT(EPOCH FROM (sold_at - first_seen)) / 86400) FILTER (WHERE status = 'sold') as avg_time_to_sell_days
+FROM items
+GROUP BY market, category, brand
+ON CONFLICT (date, market, category, brand) DO UPDATE SET
+    active_count = EXCLUDED.active_count,
+    sold_count = EXCLUDED.sold_count,
+    avg_price = EXCLUDED.avg_price,
+    min_price = EXCLUDED.min_price,
+    max_price = EXCLUDED.max_price,
+    avg_time_to_sell_days = EXCLUDED.avg_time_to_sell_days;
+
+-- 2. Delete stale active items (not seen in 7 days)
+DELETE FROM items 
+WHERE status = 'active' 
+AND last_seen < NOW() - INTERVAL '7 days';
+
+-- 3. Delete old sold items (older than 90 days)
+DELETE FROM items 
+WHERE status = 'sold' 
+AND sold_at < NOW() - INTERVAL '90 days';
+
+-- 4. Delete old price history
+DELETE FROM price_history 
+WHERE recorded_at < NOW() - INTERVAL '90 days';
+
+-- 5. Delete orphaned price history (items no longer exist)
+DELETE FROM price_history 
+WHERE vinted_id NOT IN (SELECT vinted_id FROM items);
+```
 
 ---
 
@@ -214,10 +266,39 @@ GET /api/items
 
 ## Scraping Strategy
 
-### Target
-- **Main category**: Clothes (women, men, kids)
-- **Subcategories**: Dresses, shirts, jeans, jackets, sportswear, etc.
-- **Brands**: Mix of fast fashion (Zara, H&M) and premium (Nike, Adidas, Levi's)
+### Target Categories
+
+Using universal catalog IDs that work across all markets. 80+ categories available:
+
+**Women's Clothing**
+- `women/clothing` (all), `women/dresses`, `women/tops-and-t-shirts`, `women/jumpers-and-sweaters`, `women/jeans`, `women/trousers-and-leggings`, `women/skirts`, `women/shorts-and-cropped-trousers`, `women/outerwear`, `women/suits-and-blazers`, `women/jumpsuits-and-playsuits`, `women/activewear`, `women/swimwear`, `women/lingerie-and-nightwear`, `women/maternity-clothes`, `women/costumes-and-special-outfits`
+
+**Women's Shoes**
+- `women/shoes` (all), `women/boots`, `women/heels`, `women/trainers`, `women/sandals`, `women/ballerinas`, `women/slippers`, `women/sports-shoes`, `women/flip-flops-and-slides`, `women/espadrilles`, `women/boat-shoes-loafers-and-moccasins`, `women/clogs-and-mules`, `women/mary-janes-and-t-bar-shoes`, `women/lace-up-shoes`
+
+**Women's Bags**
+- `women/bags` (all), `women/handbags`, `women/backpacks`, `women/shoulder-bags`, `women/tote-bags`, `women/clutches`, `women/wallets-and-purses`, `women/bucket-bags`, `women/hobo-bags`, `women/beach-bags`, `women/gym-bags`, `women/bum-bags`, `women/satchels-and-messenger-bags`, `women/makeup-bags`, `women/luggage-and-suitcases`
+
+**Women's Accessories**
+- `women/jewellery`, `women/watches`, `women/sunglasses`, `women/belts`, `women/hats-and-caps`, `women/scarves-and-shawls`, `women/gloves`, `women/hair-accessories`, `women/umbrellas`, `women/keyrings`
+
+**Men's Clothing**
+- `men/clothing` (all), `men/tops-and-t-shirts`, `men/jumpers-and-sweaters`, `men/jeans`, `men/trousers`, `men/shorts`, `men/outerwear`, `men/suits-and-blazers`, `men/activewear`, `men/swimwear`, `men/sleepwear`, `men/socks-and-underwear`, `men/costumes-and-special-outfits`
+
+**Men's Shoes**
+- `men/shoes` (all), `men/boots`, `men/trainers`, `men/formal-shoes`, `men/sandals`, `men/sports-shoes`, `men/slippers`, `men/flip-flops-and-slides`, `men/boat-shoes-loafers-and-moccasins`, `men/espadrilles`, `men/clogs-and-mules`
+
+**Men's Accessories**
+- `men/bags-and-backpacks`, `men/jewellery`, `men/watches`, `men/sunglasses`, `men/belts`, `men/hats-and-caps`, `men/scarves-and-shawls`, `men/gloves`, `men/ties-and-bow-ties`, `men/braces-and-suspenders`
+
+### URL Construction
+
+Catalog IDs are universal across all markets. URL format:
+```
+https://www.vinted.{market}/catalog/{catalog_id}-{slug}?page={page}
+```
+
+Example: `https://www.vinted.it/catalog/10-dresses?page=1`
 
 ### Frequency
 - Active listings: every 12h
@@ -245,10 +326,9 @@ GET /api/items
 - 9 markets = stagger scraping to avoid spikes
 
 ### What to Scrape
-1. **Search results pages** — listing cards with basic info
+1. **Category pages** — listing cards via catalog URLs
 2. **Individual item pages** — full details, view/fav counts, seller info
-3. **Category pages** — women/men/kids → subcategories
-4. **Seller profiles (V2)** — sold count, rating, total listings
+3. **Seller profiles (V2)** — sold count, rating, total listings
 
 ---
 
@@ -347,10 +427,12 @@ yarn dev
 
 ## Roadmap
 
-1. **Week 1-2**: Scraper MVP — one category, 4 markets, basic storage
-2. **Week 3-4**: API + Dashboard — trends, price history, basic viz
-3. **Month 2**: Sold detection, velocity metrics, arbitrage POC
-4. **Month 3**: Evaluate: personal tool or worth expanding?
+- [x] **Phase 1**: Scraper MVP — single market, single category, SQLite storage
+- [x] **Phase 2**: Expand scraper — all 9 markets, 80+ categories, Supabase, sold detection, price history, tests, GitHub Actions
+- [x] **Phase 3**: API — FastAPI backend with lookup, boost, compare, sold, trends endpoints
+- [x] **Phase 4**: Frontend — React dashboard with search, results, charts
+- [ ] **Phase 5**: Polish & deploy — Railway (API), Vercel (frontend), production testing
+- [ ] **Phase 6**: V2 features — saved items, boost optimization, alerts
 
 ---
 
