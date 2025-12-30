@@ -34,6 +34,11 @@ function formatCategoryName(category: string): string {
     .join(' ');
 }
 
+function getInitialTab(): 'search' | 'trends' {
+  const hash = window.location.hash.replace('#', '');
+  return hash === 'trends' ? 'trends' : 'search';
+}
+
 function App() {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -42,7 +47,13 @@ function App() {
   const [trendItems, setTrendItems] = useState<TrendingItem[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'search' | 'trends'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'trends'>(getInitialTab);
+
+  // Update URL hash when tab changes
+  const handleTabChange = (tab: 'search' | 'trends') => {
+    setActiveTab(tab);
+    window.location.hash = tab;
+  };
 
   // Trends filters
   const [categories, setCategories] = useState<CategoriesResponse | null>(null);
@@ -169,14 +180,14 @@ function App() {
       <nav className="tabs">
         <button
           className={activeTab === 'search' ? 'active' : ''}
-          onClick={() => setActiveTab('search')}
+          onClick={() => handleTabChange('search')}
         >
           Search
         </button>
         <button
           className={activeTab === 'trends' ? 'active' : ''}
           onClick={() => {
-            setActiveTab('trends');
+            handleTabChange('trends');
             if (!trends) handleLoadTrends(selectedMarket, selectedCategories, true);
           }}
         >
