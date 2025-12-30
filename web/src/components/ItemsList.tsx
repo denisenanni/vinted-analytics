@@ -35,7 +35,7 @@ export function ItemsList({ items }: ItemsListProps) {
             )}
             <div className="item-info">
               <span className="item-title">{item.title}</span>
-              <span className="item-brand">{item.brand || 'Unknown brand'}</span>
+              <span className="item-brand">{item.brand || item.title}</span>
               <div className="item-meta">
                 <span className="item-price">€{item.price.toFixed(2)}</span>
                 <span className="item-market">{item.market}</span>

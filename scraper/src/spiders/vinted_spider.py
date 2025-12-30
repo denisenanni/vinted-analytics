@@ -211,10 +211,18 @@ class VintedSpider:
         if img_el:
             image_url = await img_el.get_attribute('src')
             alt_text = await img_el.get_attribute('alt') or ""
-            # Alt format: "Title, brand: BrandName, condizioni: ..."
-            if "brand:" in alt_text.lower():
-                brand_part = alt_text.lower().split("brand:")[1]
-                brand = brand_part.split(",")[0].strip().title()
+            # Alt format varies by market: "brand:", "marca:", "marque:", etc.
+            brand_keywords = ["brand:", "marca:", "marque:", "marke:"]
+            alt_lower = alt_text.lower()
+            for keyword in brand_keywords:
+                if keyword in alt_lower:
+                    brand_part = alt_lower.split(keyword)[1]
+                    brand = brand_part.split(",")[0].strip().title()
+                    break
+
+        # Fallback: use title as brand (Vinted shows brand name in title area)
+        if not brand and title and title.strip().lower() != "unknown":
+            brand = title.strip()
 
         # Get favorites count (default to 0 if badge not shown)
         fav_el = await card.query_selector('[data-testid="favourite-count-text"]')
