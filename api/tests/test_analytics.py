@@ -55,9 +55,9 @@ def mock_supabase_with_items():
         {"market": "IT", "category": "women/handbags", "favorites": 30},
         {"market": "IT", "category": "women/dresses", "favorites": 10},
         {"market": "IT", "category": "women/dresses", "favorites": 5},
-        # Categories not in allowed list should be excluded
-        {"market": "IT", "category": "women/jewellery", "favorites": 200},
-        {"market": "IT", "category": "clothing", "favorites": 150},
+        # Generic categories not in allowed list should be excluded
+        {"market": "IT", "category": "clothing", "favorites": 200},
+        {"market": "IT", "category": "women/clothing", "favorites": 150},
         # France - dresses should be hot
         {"market": "FR", "category": "women/dresses", "favorites": 100},
         {"market": "FR", "category": "women/dresses", "favorites": 50},
@@ -127,8 +127,8 @@ def test_get_hot_categories_only_includes_allowed_categories(mock_supabase_with_
         from src.services.analytics import get_hot_categories
         result = get_hot_categories()
 
-        # Italy has 'women/jewellery' with 200 favorites but it's not in the allowed list
+        # Italy has 'clothing' with 200 favorites but it's not in the allowed list
         # So handbags (80 favorites) should win instead
         assert "IT" in result["hot_categories"]
         assert result["hot_categories"]["IT"]["category"] == "women/handbags"
-        assert result["hot_categories"]["IT"]["category"] != "women/jewellery"
+        assert result["hot_categories"]["IT"]["category"] != "clothing"

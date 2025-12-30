@@ -208,7 +208,7 @@ def get_hot_categories() -> dict:
     supabase = get_supabase()
     markets = ["IT", "FR", "DE", "ES", "NL", "PL", "BE", "AT", "PT"]
 
-    # Only include categories that are actively scraped and shown in the UI
+    # Only include categories that are shown in the UI filters
     allowed_categories = {
         # Women's clothing
         "women/dresses", "women/tops-and-t-shirts", "women/jumpers-and-sweaters",
@@ -224,6 +224,10 @@ def get_hot_categories() -> dict:
         "women/handbags", "women/backpacks", "women/shoulder-bags", "women/tote-bags",
         "women/clutches", "women/wallets-and-purses", "women/bucket-bags",
         "women/hobo-bags", "women/beach-bags", "women/gym-bags", "women/bum-bags",
+        # Women's accessories
+        "women/jewellery", "women/watches", "women/sunglasses", "women/belts",
+        "women/hats-and-caps", "women/scarves-and-shawls", "women/gloves",
+        "women/hair-accessories", "women/umbrellas", "women/keyrings",
         # Men's clothing
         "men/tops-and-t-shirts", "men/jumpers-and-sweaters", "men/jeans",
         "men/trousers", "men/shorts", "men/outerwear", "men/suits-and-blazers",
@@ -232,7 +236,9 @@ def get_hot_categories() -> dict:
         "men/boots", "men/trainers", "men/formal-shoes", "men/sandals",
         "men/sports-shoes", "men/slippers", "men/flip-flops-and-slides",
         # Men's accessories
-        "men/bags-and-backpacks",
+        "men/bags-and-backpacks", "men/jewellery", "men/watches", "men/sunglasses",
+        "men/belts", "men/hats-and-caps", "men/scarves-and-shawls", "men/gloves",
+        "men/ties-and-bow-ties", "men/braces-and-suspenders",
     }
 
     # Get recent items with favorites

@@ -53,6 +53,10 @@ const CATEGORIES = {
     'women/belts',
     'women/hats-and-caps',
     'women/scarves-and-shawls',
+    'women/gloves',
+    'women/hair-accessories',
+    'women/umbrellas',
+    'women/keyrings',
   ],
   "Men's Clothing": [
     'men/tops-and-t-shirts',
