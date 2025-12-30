@@ -9,6 +9,10 @@ _hot_categories_cache = {
 }
 HOT_CATEGORIES_TTL = timedelta(minutes=5)
 
+# Cache for market stats aggregation (refreshes every 3 minutes)
+_market_stats_cache = {}
+MARKET_STATS_TTL = timedelta(minutes=3)
+
 
 def lookup_items(
     brand: Optional[str] = None,
@@ -20,20 +24,23 @@ def lookup_items(
     """Core lookup: find similar items and calculate stats."""
     supabase = get_supabase()
 
-    # Build query
-    query = supabase.table("items").select("*")
+    # Build base filters
+    def apply_filters(query):
+        if brand:
+            query = query.ilike("brand", f"%{brand}%")
+        if category:
+            query = query.eq("category", category)
+        if size:
+            query = query.ilike("size", f"%{size}%")
+        if market:
+            query = query.eq("market", market)
+        return query
 
-    if brand:
-        query = query.ilike("brand", f"%{brand}%")
-    if category:
-        query = query.eq("category", category)
-    if size:
-        query = query.ilike("size", f"%{size}%")
-    if market:
-        query = query.eq("market", market)
-
-    query = query.order("last_seen", desc=True).limit(500)
-    result = query.execute()
+    # Query 1: Get recent items for display (limited)
+    items_query = supabase.table("items").select("*")
+    items_query = apply_filters(items_query)
+    items_query = items_query.order("last_seen", desc=True).limit(500)
+    result = items_query.execute()
     items = result.data
 
     if not items:
@@ -47,7 +54,7 @@ def lookup_items(
             "recent_items": []
         }
 
-    # Calculate stats
+    # Calculate stats from recent items
     prices = [i["price"] for i in items if i["price"]]
     avg_price = sum(prices) / len(prices) if prices else 0
     min_price = min(prices) if prices else 0
@@ -62,28 +69,68 @@ def lookup_items(
     else:
         demand_score = "low"
 
-    # Best markets
-    market_stats = {}
-    for item in items:
-        m = item["market"]
-        if m not in market_stats:
-            market_stats[m] = {"count": 0, "prices": [], "favorites": []}
-        market_stats[m]["count"] += 1
-        market_stats[m]["prices"].append(item["price"] or 0)
-        market_stats[m]["favorites"].append(item["favorites"] or 0)
+    # Query 2: Separate aggregation for best markets (with caching)
+    cache_key = f"{brand or ''}:{category or ''}:{size or ''}:{market or ''}"
+    cached = _market_stats_cache.get(cache_key)
 
-    best_markets = []
-    for m, stats in market_stats.items():
-        best_markets.append({
-            "market": m,
-            "count": stats["count"],
-            "avg_price": sum(stats["prices"]) / len(stats["prices"]) if stats["prices"] else 0,
-            "avg_favorites": sum(stats["favorites"]) / len(stats["favorites"]) if stats["favorites"] else 0
-        })
-    best_markets.sort(key=lambda x: x["count"], reverse=True)
+    if cached and datetime.now() < cached["expires_at"]:
+        # Use cached data
+        best_markets = cached["best_markets"]
+        total_items = cached["total_items"]
+    else:
+        # Fetch all items with pagination
+        all_market_items = []
+        page_size = 1000
+        offset = 0
+
+        while True:
+            markets_query = supabase.table("items").select("market, price, favorites")
+            markets_query = apply_filters(markets_query)
+            markets_query = markets_query.range(offset, offset + page_size - 1)
+            markets_result = markets_query.execute()
+            batch = markets_result.data
+
+            if not batch:
+                break
+
+            all_market_items.extend(batch)
+            offset += page_size
+
+            # Safety limit to prevent infinite loops (max 50k items)
+            if offset >= 50000:
+                break
+
+        # Aggregate by market
+        market_stats = {}
+        for item in all_market_items:
+            m = item["market"]
+            if m not in market_stats:
+                market_stats[m] = {"count": 0, "prices": [], "favorites": []}
+            market_stats[m]["count"] += 1
+            market_stats[m]["prices"].append(item["price"] or 0)
+            market_stats[m]["favorites"].append(item["favorites"] or 0)
+
+        best_markets = []
+        for m, stats in market_stats.items():
+            best_markets.append({
+                "market": m,
+                "count": stats["count"],
+                "avg_price": sum(stats["prices"]) / len(stats["prices"]) if stats["prices"] else 0,
+                "avg_favorites": sum(stats["favorites"]) / len(stats["favorites"]) if stats["favorites"] else 0
+            })
+        best_markets.sort(key=lambda x: x["count"], reverse=True)
+
+        total_items = len(all_market_items)
+
+        # Cache the results
+        _market_stats_cache[cache_key] = {
+            "best_markets": best_markets,
+            "total_items": total_items,
+            "expires_at": datetime.now() + MARKET_STATS_TTL
+        }
 
     return {
-        "total_items": len(items),
+        "total_items": total_items,
         "avg_price": round(avg_price, 2),
         "min_price": round(min_price, 2),
         "max_price": round(max_price, 2),
