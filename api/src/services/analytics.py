@@ -313,17 +313,32 @@ def get_hot_categories() -> dict:
         "men/ties-and-bow-ties", "men/braces-and-suspenders",
     }
 
-    # Get recent items with favorites - single batch query for all markets
+    # Get recent items with favorites - paginated query for all markets
     threshold = (datetime.now() - timedelta(days=7)).isoformat()
 
-    result = supabase.table("items")\
-        .select("market, category, favorites")\
-        .in_("market", markets)\
-        .gte("last_seen", threshold)\
-        .gt("favorites", 0)\
-        .execute()
+    all_items = []
+    page_size = 1000
+    offset = 0
 
-    all_items = result.data
+    while True:
+        result = supabase.table("items")\
+            .select("market, category, favorites")\
+            .in_("market", markets)\
+            .gte("last_seen", threshold)\
+            .gt("favorites", 0)\
+            .range(offset, offset + page_size - 1)\
+            .execute()
+
+        batch = result.data
+        if not batch:
+            break
+
+        all_items.extend(batch)
+        offset += page_size
+
+        # Safety limit
+        if offset >= 100000:
+            break
 
     # Group by market, then aggregate by category
     market_category_stats = {}

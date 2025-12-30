@@ -73,6 +73,14 @@ function App() {
       .catch(console.error);
   }, []);
 
+  // Load trends data on mount if starting on trends tab
+  useEffect(() => {
+    if (activeTab === 'trends' && !trends) {
+      handleLoadTrends(selectedMarket, selectedCategories, true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleSearch = async (params: {
     brand?: string;
     category?: string;
