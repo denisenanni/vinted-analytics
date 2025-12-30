@@ -198,6 +198,8 @@ class VintedSpider:
 
         # Extract title from URL slug (e.g., /items/12345-bolso-marron-grande -> "Bolso Marron Grande")
         url_slug = href.split('/items/')[-1] if '/items/' in href else ""
+        # Remove query parameters (e.g., ?referrer=catalog)
+        url_slug = url_slug.split('?')[0]
         # Remove the ID prefix and convert slug to title
         slug_parts = url_slug.split('-')[1:]  # Skip the ID
         title = ' '.join(word.capitalize() for word in slug_parts) if slug_parts else "Unknown"
