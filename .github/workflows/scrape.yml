@@ -36,6 +36,43 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          python -m src.main --market ${{ matrix.market }} --category women/dresses --pages 10
-          python -m src.main --market ${{ matrix.market }} --category women/shirts --pages 10
-          python -m src.main --market ${{ matrix.market }} --category men/jeans --pages 10
+          # Women's clothing
+          python -m src.main --market ${{ matrix.market }} --category women/dresses --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/tops-and-t-shirts --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/jumpers-and-sweaters --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/jeans --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/trousers-and-leggings --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/skirts --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/outerwear --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/suits-and-blazers --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/activewear --pages 2
+          # Women's shoes
+          python -m src.main --market ${{ matrix.market }} --category women/boots --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/heels --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/trainers --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/sandals --pages 2
+          # Women's bags
+          python -m src.main --market ${{ matrix.market }} --category women/handbags --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/backpacks --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/shoulder-bags --pages 2
+          # Women's accessories
+          python -m src.main --market ${{ matrix.market }} --category women/jewellery --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/watches --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/sunglasses --pages 2
+          # Men's clothing
+          python -m src.main --market ${{ matrix.market }} --category men/tops-and-t-shirts --pages 2
+          python -m src.main --market ${{ matrix.market }} --category men/jumpers-and-sweaters --pages 2
+          python -m src.main --market ${{ matrix.market }} --category men/jeans --pages 2
+          python -m src.main --market ${{ matrix.market }} --category men/trousers --pages 2
+          python -m src.main --market ${{ matrix.market }} --category men/outerwear --pages 2
+          python -m src.main --market ${{ matrix.market }} --category men/suits-and-blazers --pages 2
+          python -m src.main --market ${{ matrix.market }} --category men/activewear --pages 2
+          # Men's shoes
+          python -m src.main --market ${{ matrix.market }} --category men/boots --pages 2
+          python -m src.main --market ${{ matrix.market }} --category men/trainers --pages 2
+          python -m src.main --market ${{ matrix.market }} --category men/formal-shoes --pages 2
+          # Men's accessories
+          python -m src.main --market ${{ matrix.market }} --category men/bags-and-backpacks --pages 2
+          python -m src.main --market ${{ matrix.market }} --category men/jewellery --pages 2
+          python -m src.main --market ${{ matrix.market }} --category men/watches --pages 2
+          python -m src.main --market ${{ matrix.market }} --category men/sunglasses --pages 2
