@@ -191,38 +191,33 @@ class VintedSpider:
         if not href:
             return None
 
-        # Extract item ID from URL like /items/12345-item-title
+        # Extract item ID and title from URL like /items/12345-item-title
         vinted_id = href.split('/items/')[-1].split('-')[0] if '/items/' in href else None
         if not vinted_id:
             return None
 
-        # Get title/brand from description-title
-        title_el = await card.query_selector('[data-testid$="--description-title"]')
-        title = await title_el.inner_text() if title_el else "Unknown"
+        # Extract title from URL slug (e.g., /items/12345-bolso-marron-grande -> "Bolso Marron Grande")
+        url_slug = href.split('/items/')[-1] if '/items/' in href else ""
+        # Remove the ID prefix and convert slug to title
+        slug_parts = url_slug.split('-')[1:]  # Skip the ID
+        title = ' '.join(word.capitalize() for word in slug_parts) if slug_parts else "Unknown"
+
+        # Get brand from description-title (what Vinted shows as "title" on cards is actually the brand)
+        brand_el = await card.query_selector('[data-testid$="--description-title"]')
+        brand_from_card = await brand_el.inner_text() if brand_el else None
 
         # Get full card text to extract price
         card_text = await card.inner_text()
         price = self._extract_price_from_text(card_text)
 
-        # Get image - extract brand from alt text if available
+        # Get image URL
         img_el = await card.query_selector('img')
         image_url = None
-        brand = None
         if img_el:
             image_url = await img_el.get_attribute('src')
-            alt_text = await img_el.get_attribute('alt') or ""
-            # Alt format varies by market: "brand:", "marca:", "marque:", etc.
-            brand_keywords = ["brand:", "marca:", "marque:", "marke:"]
-            alt_lower = alt_text.lower()
-            for keyword in brand_keywords:
-                if keyword in alt_lower:
-                    brand_part = alt_lower.split(keyword)[1]
-                    brand = brand_part.split(",")[0].strip().title()
-                    break
 
-        # Fallback: use title as brand (Vinted shows brand name in title area)
-        if not brand and title and title.strip().lower() != "unknown":
-            brand = title.strip()
+        # Brand comes from the card "title" element (Vinted shows brand in title area on listing cards)
+        brand = brand_from_card.strip() if brand_from_card else None
 
         # Get favorites count (default to 0 if badge not shown)
         fav_el = await card.query_selector('[data-testid="favourite-count-text"]')
