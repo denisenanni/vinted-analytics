@@ -2,6 +2,13 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from ..db import get_supabase
 
+# Cache for hot categories (refreshes every 5 minutes)
+_hot_categories_cache = {
+    "data": None,
+    "expires_at": None
+}
+HOT_CATEGORIES_TTL = timedelta(minutes=5)
+
 
 def lookup_items(
     brand: Optional[str] = None,
@@ -97,18 +104,28 @@ def compare_markets(
     if not markets:
         markets = ["IT", "FR", "DE", "ES", "NL", "PL", "BE", "AT", "PT"]
 
+    # Single batch query for all markets
+    query = supabase.table("items").select("*").in_("market", markets)
+
+    if brand:
+        query = query.ilike("brand", f"%{brand}%")
+    if category:
+        query = query.eq("category", category)
+
+    result = query.limit(2000).execute()
+    all_items = result.data
+
+    # Group items by market
+    items_by_market = {}
+    for item in all_items:
+        m = item["market"]
+        if m not in items_by_market:
+            items_by_market[m] = []
+        items_by_market[m].append(item)
+
     market_data = []
-
     for market in markets:
-        query = supabase.table("items").select("*").eq("market", market)
-
-        if brand:
-            query = query.ilike("brand", f"%{brand}%")
-        if category:
-            query = query.eq("category", category)
-
-        result = query.limit(200).execute()
-        items = result.data
+        items = items_by_market.get(market, [])
 
         if items:
             prices = [i["price"] for i in items if i["price"]]
@@ -205,6 +222,14 @@ def get_trends(
 
 def get_hot_categories() -> dict:
     """Get the hottest (most trending) category for each market."""
+    global _hot_categories_cache
+
+    # Return cached data if still valid
+    if (_hot_categories_cache["data"] is not None
+        and _hot_categories_cache["expires_at"]
+        and datetime.now() < _hot_categories_cache["expires_at"]):
+        return _hot_categories_cache["data"]
+
     supabase = get_supabase()
     markets = ["IT", "FR", "DE", "ES", "NL", "PL", "BE", "AT", "PT"]
 
@@ -241,40 +266,40 @@ def get_hot_categories() -> dict:
         "men/ties-and-bow-ties", "men/braces-and-suspenders",
     }
 
-    # Get recent items with favorites
+    # Get recent items with favorites - single batch query for all markets
     threshold = (datetime.now() - timedelta(days=7)).isoformat()
 
-    hot_categories = {}
+    result = supabase.table("items")\
+        .select("market, category, favorites")\
+        .in_("market", markets)\
+        .gte("last_seen", threshold)\
+        .gt("favorites", 0)\
+        .execute()
 
-    for market in markets:
-        # Get items with favorites > 0 from last 7 days
-        result = supabase.table("items")\
-            .select("category, favorites")\
-            .eq("market", market)\
-            .gte("last_seen", threshold)\
-            .gt("favorites", 0)\
-            .execute()
+    all_items = result.data
 
-        items = result.data
+    # Group by market, then aggregate by category
+    market_category_stats = {}
+    for item in all_items:
+        market = item.get("market")
+        cat = item.get("category")
 
-        if not items:
+        if not market or not cat:
+            continue
+        if cat not in allowed_categories:
             continue
 
-        # Aggregate favorites by category (only allowed categories)
-        category_stats = {}
-        for item in items:
-            cat = item.get("category")
-            if not cat:
-                continue
-            # Only include categories that are in the allowed list
-            if cat not in allowed_categories:
-                continue
-            if cat not in category_stats:
-                category_stats[cat] = {"total_favorites": 0, "count": 0}
-            category_stats[cat]["total_favorites"] += item.get("favorites") or 0
-            category_stats[cat]["count"] += 1
+        if market not in market_category_stats:
+            market_category_stats[market] = {}
+        if cat not in market_category_stats[market]:
+            market_category_stats[market][cat] = {"total_favorites": 0, "count": 0}
 
-        # Find category with highest total favorites
+        market_category_stats[market][cat]["total_favorites"] += item.get("favorites") or 0
+        market_category_stats[market][cat]["count"] += 1
+
+    # Find hottest category per market
+    hot_categories = {}
+    for market, category_stats in market_category_stats.items():
         if category_stats:
             hot_cat = max(category_stats.items(), key=lambda x: x[1]["total_favorites"])
             hot_categories[market] = {
@@ -283,7 +308,12 @@ def get_hot_categories() -> dict:
                 "item_count": hot_cat[1]["count"]
             }
 
-    return {"hot_categories": hot_categories}
+    # Cache the result
+    result = {"hot_categories": hot_categories}
+    _hot_categories_cache["data"] = result
+    _hot_categories_cache["expires_at"] = datetime.now() + HOT_CATEGORIES_TTL
+
+    return result
 
 
 def get_sold_items(

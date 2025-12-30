@@ -6,6 +6,28 @@ export const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
+// Simple in-memory cache for API responses
+const cache = new Map<string, { data: unknown; expiresAt: number }>();
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+
+function getCacheKey(url: string, params?: Record<string, unknown>): string {
+  return `${url}?${JSON.stringify(params || {})}`;
+}
+
+async function cachedGet<T>(url: string, params?: Record<string, unknown>): Promise<{ data: T }> {
+  const key = getCacheKey(url, params);
+  const cached = cache.get(key);
+
+  if (cached && Date.now() < cached.expiresAt) {
+    return { data: cached.data as T };
+  }
+
+  const response = await api.get<T>(url, { params });
+  cache.set(key, { data: response.data, expiresAt: Date.now() + CACHE_TTL });
+
+  return response;
+}
+
 export interface LookupParams {
   brand?: string;
   category?: string;
@@ -100,18 +122,16 @@ export const getTrends = (
   limit = 20,
   offset = 0
 ) =>
-  api.get<TrendsResponse>('/api/trends', {
-    params: {
-      market,
-      categories: categories?.length ? categories.join(',') : undefined,
-      period,
-      limit,
-      offset,
-    },
+  cachedGet<TrendsResponse>('/api/trends', {
+    market,
+    categories: categories?.length ? categories.join(',') : undefined,
+    period,
+    limit,
+    offset,
   });
 
 export const getCategories = () =>
-  api.get<CategoriesResponse>('/api/categories');
+  cachedGet<CategoriesResponse>('/api/categories', {});
 
 export const compare = (brand?: string, category?: string, markets?: string) =>
   api.get<CompareResponse>('/api/compare', { params: { brand, category, markets } });
@@ -127,4 +147,4 @@ export interface HotCategoriesResponse {
 }
 
 export const getHotCategories = () =>
-  api.get<HotCategoriesResponse>('/api/hot-categories');
+  cachedGet<HotCategoriesResponse>('/api/hot-categories', {});

@@ -23,6 +23,11 @@ class MockSupabaseQuery:
             self._data = [d for d in self._data if d.get(field) == value]
         return self
 
+    def in_(self, field, values):
+        if self._data:
+            self._data = [d for d in self._data if d.get(field) in values]
+        return self
+
     def gte(self, field, value):
         return self
 
@@ -44,6 +49,15 @@ class MockSupabaseClient:
         if table_name == "items":
             return MockSupabaseQuery(list(self._items_data))
         return MockSupabaseQuery([])
+
+
+@pytest.fixture(autouse=True)
+def clear_cache():
+    """Clear the hot categories cache before each test."""
+    from src.services import analytics
+    analytics._hot_categories_cache["data"] = None
+    analytics._hot_categories_cache["expires_at"] = None
+    yield
 
 
 @pytest.fixture
