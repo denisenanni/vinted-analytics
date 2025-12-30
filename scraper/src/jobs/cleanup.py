@@ -24,6 +24,8 @@ def get_supabase():
     from supabase import create_client
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_KEY")
+    if not url or not key:
+        raise ValueError(f"Supabase credentials missing. SUPABASE_URL={'set' if url else 'missing'}, SUPABASE_KEY={'set' if key else 'missing'}")
     return create_client(url, key)
 
 
