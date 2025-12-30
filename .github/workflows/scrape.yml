@@ -32,7 +32,7 @@ jobs:
       - name: Run scraper for ${{ matrix.market }}
         working-directory: ./scraper
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          USE_SUPABASE: 'true'
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
