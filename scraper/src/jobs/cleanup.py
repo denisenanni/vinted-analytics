@@ -110,40 +110,91 @@ async def aggregate_daily_stats_supabase():
 
 
 async def cleanup_stale_items_supabase():
-    """Delete active items not seen in 7 days."""
+    """Delete active items not seen in 7 days. Uses batched deletes to avoid timeout."""
     supabase = get_supabase()
     cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
 
-    result = supabase.table("items").delete().eq("status", "active").lt("last_seen", cutoff).execute()
-    deleted = len(result.data) if result.data else 0
+    # First, get IDs to delete (faster than DELETE with filter)
+    result = supabase.table("items").select("id").eq("status", "active").lt("last_seen", cutoff).execute()
+    ids_to_delete = [row["id"] for row in result.data]
+
+    if not ids_to_delete:
+        print("No stale active items to delete")
+        return 0
+
+    # Delete in batches of 50 to avoid timeout
+    batch_size = 50
+    deleted = 0
+    for i in range(0, len(ids_to_delete), batch_size):
+        batch = ids_to_delete[i:i + batch_size]
+        try:
+            supabase.table("items").delete().in_("id", batch).execute()
+            deleted += len(batch)
+        except Exception as e:
+            print(f"Warning: batch delete failed: {e}")
+
     print(f"Deleted {deleted} stale active items (not seen in 7 days)")
     return deleted
 
 
 async def cleanup_old_sold_items_supabase():
-    """Delete sold items older than 90 days."""
+    """Delete sold items older than 90 days. Uses batched deletes to avoid timeout."""
     supabase = get_supabase()
     cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
 
-    result = supabase.table("items").delete().eq("status", "sold").lt("sold_at", cutoff).execute()
-    deleted = len(result.data) if result.data else 0
+    # First, get IDs to delete
+    result = supabase.table("items").select("id").eq("status", "sold").lt("sold_at", cutoff).execute()
+    ids_to_delete = [row["id"] for row in result.data]
+
+    if not ids_to_delete:
+        print("No old sold items to delete")
+        return 0
+
+    # Delete in batches of 50
+    batch_size = 50
+    deleted = 0
+    for i in range(0, len(ids_to_delete), batch_size):
+        batch = ids_to_delete[i:i + batch_size]
+        try:
+            supabase.table("items").delete().in_("id", batch).execute()
+            deleted += len(batch)
+        except Exception as e:
+            print(f"Warning: batch delete failed: {e}")
+
     print(f"Deleted {deleted} old sold items (older than 90 days)")
     return deleted
 
 
 async def cleanup_old_price_history_supabase():
-    """Delete price history older than 90 days."""
+    """Delete price history older than 90 days. Uses batched deletes to avoid timeout."""
     supabase = get_supabase()
     cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
 
-    result = supabase.table("price_history").delete().lt("recorded_at", cutoff).execute()
-    deleted = len(result.data) if result.data else 0
+    # First, get IDs to delete
+    result = supabase.table("price_history").select("id").lt("recorded_at", cutoff).execute()
+    ids_to_delete = [row["id"] for row in result.data]
+
+    if not ids_to_delete:
+        print("No old price history to delete")
+        return 0
+
+    # Delete in batches of 50
+    batch_size = 50
+    deleted = 0
+    for i in range(0, len(ids_to_delete), batch_size):
+        batch = ids_to_delete[i:i + batch_size]
+        try:
+            supabase.table("price_history").delete().in_("id", batch).execute()
+            deleted += len(batch)
+        except Exception as e:
+            print(f"Warning: batch delete failed: {e}")
+
     print(f"Deleted {deleted} old price history records (older than 90 days)")
     return deleted
 
 
 async def cleanup_orphaned_price_history_supabase():
-    """Delete price history for items that no longer exist."""
+    """Delete price history for items that no longer exist. Uses batched deletes."""
     supabase = get_supabase()
 
     # Get all valid vinted_ids
@@ -156,18 +207,23 @@ async def cleanup_orphaned_price_history_supabase():
     # Find orphans
     orphan_ids = [h["id"] for h in history_result.data if h["vinted_id"] not in valid_ids]
 
-    if orphan_ids:
-        # Delete in batches to avoid timeout
-        batch_size = 100
-        for i in range(0, len(orphan_ids), batch_size):
-            batch = orphan_ids[i:i + batch_size]
-            for orphan_id in batch:
-                supabase.table("price_history").delete().eq("id", orphan_id).execute()
-        print(f"Deleted {len(orphan_ids)} orphaned price history records")
-    else:
+    if not orphan_ids:
         print("No orphaned price history records found")
+        return 0
 
-    return len(orphan_ids)
+    # Delete in batches of 50
+    batch_size = 50
+    deleted = 0
+    for i in range(0, len(orphan_ids), batch_size):
+        batch = orphan_ids[i:i + batch_size]
+        try:
+            supabase.table("price_history").delete().in_("id", batch).execute()
+            deleted += len(batch)
+        except Exception as e:
+            print(f"Warning: batch delete failed: {e}")
+
+    print(f"Deleted {deleted} orphaned price history records")
+    return deleted
 
 
 # SQLite implementations for local development
