@@ -739,3 +739,372 @@ body {
   padding: 1rem;
   font-size: 0.875rem;
 }
+
+/* Where to Sell */
+.where-to-sell {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.wts-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.wts-header h2 {
+  font-size: 1.75rem;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+}
+
+.wts-header p {
+  color: #666;
+  font-size: 1rem;
+}
+
+.wts-form {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.wts-field {
+  flex: 1;
+  min-width: 200px;
+}
+
+.wts-field label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.wts-field select,
+.wts-field input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.wts-analyze-btn {
+  padding: 0.75rem 2rem;
+  background: #09b1ba;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.wts-analyze-btn:hover:not(:disabled) {
+  background: #078a92;
+}
+
+.wts-analyze-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wts-error {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.wts-recommendation {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  border: 2px solid #10b981;
+}
+
+.rec-icon {
+  font-size: 2.5rem;
+}
+
+.rec-content {
+  flex: 1;
+}
+
+.rec-content h3 {
+  font-size: 1.25rem;
+  color: #064e3b;
+  margin-bottom: 0.25rem;
+}
+
+.rec-content p {
+  color: #065f46;
+  font-size: 0.9375rem;
+}
+
+.rec-score {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+}
+
+.wts-markets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.wts-market-card {
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: box-shadow 0.2s;
+}
+
+.wts-market-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.wts-market-card.best {
+  border: 2px solid #10b981;
+  background: #f0fdf4;
+}
+
+.market-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.market-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.market-score {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+}
+
+.market-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.market-stats .stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.market-stats .stat-label {
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.market-stats .stat-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.competition-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+}
+
+.score-breakdown {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e5e5;
+}
+
+.breakdown-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #e5e5e5;
+}
+
+.bar-segment {
+  height: 100%;
+}
+
+.bar-segment.price {
+  background: #3b82f6;
+}
+
+.bar-segment.speed {
+  background: #10b981;
+}
+
+.bar-segment.demand {
+  background: #f59e0b;
+}
+
+.bar-segment.competition {
+  background: #8b5cf6;
+}
+
+.breakdown-legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.legend-item .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot.price {
+  background: #3b82f6;
+}
+
+.dot.speed {
+  background: #10b981;
+}
+
+.dot.demand {
+  background: #f59e0b;
+}
+
+.dot.competition {
+  background: #8b5cf6;
+}
+
+.wts-footer {
+  text-align: center;
+  margin-top: 2rem;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.wts-no-data {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+.wts-no-data p {
+  margin-bottom: 0.5rem;
+}
+
+/* Price Guide */
+.price-guide {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.price-guide-header {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.price-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.price-tier {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.price-tier.quick {
+  background: #ecfdf5;
+}
+
+.price-tier.recommended {
+  background: #fef3c7;
+}
+
+.price-tier.premium {
+  background: #ede9fe;
+}
+
+.tier-icon {
+  font-size: 1rem;
+}
+
+.tier-label {
+  flex: 1;
+  color: #374151;
+  font-weight: 500;
+}
+
+.tier-range {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.rec-price {
+  color: #059669;
+  font-weight: 600;
+}
+
+/* Best market card price guide highlight */
+.wts-market-card.best .price-guide {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+
+.wts-market-card.best .price-tier.recommended {
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+}

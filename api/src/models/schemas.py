@@ -28,7 +28,7 @@ class LookupResponse(BaseModel):
     max_price: float
     price_range: str
     avg_time_to_sell_days: Optional[float] = None
-    demand_score: str  # low, medium, high
+    demand_score: str
     best_markets: List[dict]
     recent_items: List[ItemResponse]
 
@@ -89,3 +89,50 @@ class SoldResponse(BaseModel):
     avg_price: float
     avg_days_to_sell: Optional[float]
     items: List[SoldItem]
+
+
+class ScoreBreakdown(BaseModel):
+    price: int
+    speed: int
+    demand: int
+    competition: int
+
+
+class PriceRange(BaseModel):
+    min: float
+    max: float
+
+
+class SuggestedPrice(BaseModel):
+    quick_sale: PriceRange
+    recommended: PriceRange
+    premium: PriceRange
+    data_points: int
+
+
+class MarketProfitability(BaseModel):
+    market: str
+    avg_selling_price: float
+    suggested_price: Optional[SuggestedPrice] = None
+    avg_days_to_sell: Optional[float]
+    sell_through_rate: float
+    active_listings: int
+    sold_last_period: int
+    competition_level: str
+    total_data_points: int
+    profitability_score: int
+    score_breakdown: ScoreBreakdown
+
+
+class ProfitabilityRecommendation(BaseModel):
+    best_market: Optional[str]
+    score: Optional[int] = None
+    suggested_price: Optional[PriceRange] = None
+    reason: str
+
+
+class MarketProfitabilityResponse(BaseModel):
+    category: str
+    brand: Optional[str]
+    markets: List[MarketProfitability]
+    recommendation: ProfitabilityRecommendation

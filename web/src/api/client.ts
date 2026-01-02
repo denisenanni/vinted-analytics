@@ -178,3 +178,55 @@ export const getSold = (
   api.get<SoldResponse>('/api/sold', {
     params: { brand, category, market, period, limit },
   });
+
+export interface ScoreBreakdown {
+  price: number;
+  speed: number;
+  demand: number;
+  competition: number;
+}
+
+export interface PriceRange {
+  min: number;
+  max: number;
+}
+
+export interface SuggestedPrice {
+  quick_sale: PriceRange;
+  recommended: PriceRange;
+  premium: PriceRange;
+  data_points: number;
+}
+
+export interface MarketProfitability {
+  market: string;
+  avg_selling_price: number;
+  suggested_price: SuggestedPrice | null;
+  avg_days_to_sell: number | null;
+  sell_through_rate: number;
+  active_listings: number;
+  sold_last_period: number;
+  competition_level: 'low' | 'medium' | 'high';
+  total_data_points: number;
+  profitability_score: number;
+  score_breakdown: ScoreBreakdown;
+}
+
+export interface ProfitabilityRecommendation {
+  best_market: string | null;
+  score?: number;
+  suggested_price?: PriceRange;
+  reason: string;
+}
+
+export interface MarketProfitabilityResponse {
+  category: string;
+  brand: string | null;
+  markets: MarketProfitability[];
+  recommendation: ProfitabilityRecommendation;
+}
+
+export const getMarketProfitability = (category: string, brand?: string) =>
+  api.get<MarketProfitabilityResponse>('/api/market-profitability', {
+    params: { category, brand },
+  });

@@ -3,6 +3,7 @@ import { SearchForm } from './components/SearchForm';
 import { ResultsCard } from './components/ResultsCard';
 import { ItemsList } from './components/ItemsList';
 import { TrendsChart } from './components/TrendsChart';
+import { WhereToSell } from './components/WhereToSell';
 import {
   lookup,
   getTrends,
@@ -36,10 +37,11 @@ function formatCategoryName(category: string): string {
     .join(' ');
 }
 
-function getInitialTab(): 'search' | 'trends' | 'sold' {
+function getInitialTab(): 'search' | 'trends' | 'sold' | 'where-to-sell' {
   const hash = window.location.hash.replace('#', '');
   if (hash === 'trends') return 'trends';
   if (hash === 'sold') return 'sold';
+  if (hash === 'where-to-sell') return 'where-to-sell';
   return 'search';
 }
 
@@ -51,13 +53,13 @@ function App() {
   const [trendItems, setTrendItems] = useState<TrendingItem[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'search' | 'trends' | 'sold'>(getInitialTab);
+  const [activeTab, setActiveTab] = useState<'search' | 'trends' | 'sold' | 'where-to-sell'>(getInitialTab);
   const [sold, setSold] = useState<SoldResponse | null>(null);
   const [soldMarket, setSoldMarket] = useState('IT');
   const [soldPeriod, setSoldPeriod] = useState('30d');
 
   // Update URL hash when tab changes
-  const handleTabChange = (tab: 'search' | 'trends' | 'sold') => {
+  const handleTabChange = (tab: 'search' | 'trends' | 'sold' | 'where-to-sell') => {
     setActiveTab(tab);
     window.location.hash = tab;
   };
@@ -243,6 +245,12 @@ function App() {
           }}
         >
           Sold
+        </button>
+        <button
+          className={activeTab === 'where-to-sell' ? 'active' : ''}
+          onClick={() => handleTabChange('where-to-sell')}
+        >
+          Where to Sell
         </button>
       </nav>
 
@@ -472,6 +480,10 @@ function App() {
               <p className="no-data">No sold items found for this period.</p>
             )}
           </div>
+        )}
+
+        {activeTab === 'where-to-sell' && (
+          <WhereToSell categories={categories} />
         )}
       </main>
 

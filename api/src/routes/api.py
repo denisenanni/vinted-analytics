@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 from typing import Optional, List
 from ..services import analytics
-from ..models.schemas import LookupResponse, CompareResponse, TrendsResponse, SoldResponse
+from ..models.schemas import LookupResponse, CompareResponse, TrendsResponse, SoldResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse
 
 router = APIRouter(prefix="/api", tags=["analytics"])
 
@@ -126,6 +126,29 @@ async def sold(
         avg_days_to_sell=result["avg_days_to_sell"],
         items=result["items"]
     )
+
+
+@router.get("/market-profitability", response_model=MarketProfitabilityResponse)
+async def market_profitability(
+    category: str = Query(..., description="Category path, e.g. women/trousers-and-leggings"),
+    brand: Optional[str] = Query(None, description="Brand name (optional)")
+):
+    """
+    Calculate which market is most profitable for selling a specific item type.
+    
+    Returns profitability scores considering:
+    - Average selling price (higher = better)
+    - Average days to sell (lower = better)  
+    - Sell-through rate (higher = better)
+    - Competition level (fewer active listings = better)
+    
+    Use this to decide which country to list your item in.
+    """
+    result = analytics.get_market_profitability(
+        category=category,
+        brand=brand
+    )
+    return result
 
 
 @router.get("/categories")

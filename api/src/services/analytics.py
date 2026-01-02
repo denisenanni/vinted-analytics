@@ -2,6 +2,253 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from ..db import get_supabase
 
+
+def percentile(data: List[float], p: float) -> float:
+    """Calculate the p-th percentile of a list of numbers."""
+    if not data:
+        return 0
+    sorted_data = sorted(data)
+    k = (len(sorted_data) - 1) * p / 100
+    f = int(k)
+    c = f + 1 if f + 1 < len(sorted_data) else f
+    if f == c:
+        return sorted_data[f]
+    return sorted_data[f] * (c - k) + sorted_data[c] * (k - f)
+
+
+def get_market_profitability(
+    category: str,
+    brand: Optional[str] = None
+) -> dict:
+    """
+    Calculate profitability score for each market to help decide where to sell.
+    
+    Considers:
+    - Average selling price (higher = better)
+    - Average days to sell (lower = better)
+    - Sell-through rate (higher = better)
+    - Competition level (lower active listings = better)
+    
+    Also provides suggested price ranges per market.
+    """
+    supabase = get_supabase()
+    markets = ["IT", "FR", "DE", "ES", "NL", "PL", "BE", "AT", "PT"]
+    
+    # Get all items for this category across all markets
+    query = supabase.table("items").select("*").eq("category", category)
+    if brand:
+        query = query.ilike("brand", f"%{brand}%")
+    
+    # Fetch with pagination to get all data
+    all_items = []
+    page_size = 1000
+    offset = 0
+    
+    while True:
+        result = query.range(offset, offset + page_size - 1).execute()
+        batch = result.data
+        if not batch:
+            break
+        all_items.extend(batch)
+        offset += page_size
+        if offset >= 50000:  # Safety limit
+            break
+    
+    if not all_items:
+        return {
+            "category": category,
+            "brand": brand,
+            "markets": [],
+            "recommendation": {
+                "best_market": None,
+                "reason": "No data available for this category"
+            }
+        }
+    
+    # Group items by market
+    items_by_market = {m: [] for m in markets}
+    for item in all_items:
+        m = item.get("market")
+        if m in items_by_market:
+            items_by_market[m].append(item)
+    
+    # Calculate stats per market
+    market_stats = []
+    
+    for market in markets:
+        items = items_by_market[market]
+        if not items:
+            continue
+        
+        active = [i for i in items if i.get("status") == "active"]
+        sold = [i for i in items if i.get("status") == "sold"]
+        
+        # Prices from sold items (actual selling prices)
+        sold_prices = [i["price"] for i in sold if i.get("price") and i["price"] > 0]
+        active_prices = [i["price"] for i in active if i.get("price") and i["price"] > 0]
+        
+        # Use sold prices if available, otherwise active
+        all_prices = sold_prices if sold_prices else active_prices
+        
+        avg_selling_price = sum(all_prices) / len(all_prices) if all_prices else 0
+        
+        # Calculate suggested price ranges (percentiles)
+        if all_prices:
+            suggested_price = {
+                "quick_sale": {
+                    "min": round(percentile(all_prices, 15), 2),
+                    "max": round(percentile(all_prices, 35), 2)
+                },
+                "recommended": {
+                    "min": round(percentile(all_prices, 40), 2),
+                    "max": round(percentile(all_prices, 60), 2)
+                },
+                "premium": {
+                    "min": round(percentile(all_prices, 65), 2),
+                    "max": round(percentile(all_prices, 85), 2)
+                },
+                "data_points": len(all_prices)
+            }
+        else:
+            suggested_price = None
+        
+        # Calculate days to sell
+        days_to_sell_list = []
+        for item in sold:
+            first_seen = item.get("first_seen")
+            sold_at = item.get("sold_at")
+            if first_seen and sold_at:
+                try:
+                    fs = datetime.fromisoformat(first_seen.replace("Z", "+00:00"))
+                    sa = datetime.fromisoformat(sold_at.replace("Z", "+00:00"))
+                    days = (sa - fs).days
+                    if 0 <= days <= 365:  # Reasonable range
+                        days_to_sell_list.append(days)
+                except:
+                    pass
+        
+        avg_days_to_sell = (
+            sum(days_to_sell_list) / len(days_to_sell_list)
+            if days_to_sell_list else None
+        )
+        
+        # Sell-through rate
+        total_tracked = len(active) + len(sold)
+        sell_through_rate = len(sold) / total_tracked if total_tracked > 0 else 0
+        
+        # Competition level
+        active_count = len(active)
+        if active_count < 50:
+            competition = "low"
+        elif active_count < 200:
+            competition = "medium"
+        else:
+            competition = "high"
+        
+        market_stats.append({
+            "market": market,
+            "avg_selling_price": round(avg_selling_price, 2),
+            "suggested_price": suggested_price,
+            "avg_days_to_sell": round(avg_days_to_sell, 1) if avg_days_to_sell else None,
+            "sell_through_rate": round(sell_through_rate, 3),
+            "active_listings": active_count,
+            "sold_last_period": len(sold),
+            "competition_level": competition,
+            "total_data_points": total_tracked
+        })
+    
+    if not market_stats:
+        return {
+            "category": category,
+            "brand": brand,
+            "markets": [],
+            "recommendation": {
+                "best_market": None,
+                "reason": "No data available for this category"
+            }
+        }
+    
+    # Calculate profitability scores
+    prices = [m["avg_selling_price"] for m in market_stats if m["avg_selling_price"] > 0]
+    max_price = max(prices) if prices else 1
+    min_price = min(prices) if prices else 0
+    price_range = max_price - min_price if max_price > min_price else 1
+    
+    days_list = [m["avg_days_to_sell"] for m in market_stats if m["avg_days_to_sell"] is not None]
+    max_days = max(days_list) if days_list else 30
+    min_days = min(days_list) if days_list else 1
+    
+    str_rates = [m["sell_through_rate"] for m in market_stats]
+    max_str = max(str_rates) if str_rates else 1
+    
+    active_counts = [m["active_listings"] for m in market_stats]
+    max_active = max(active_counts) if active_counts else 1
+    
+    for m in market_stats:
+        # Price score: higher price = better (0-30 points)
+        price_score = ((m["avg_selling_price"] - min_price) / price_range * 30) if price_range > 0 else 15
+        
+        # Speed score: faster = better (0-25 points)
+        if m["avg_days_to_sell"] is not None and max_days > min_days:
+            speed_score = ((max_days - m["avg_days_to_sell"]) / (max_days - min_days) * 25)
+        else:
+            speed_score = 12.5
+        
+        # Demand score: higher sell-through = better (0-25 points)
+        demand_score = (m["sell_through_rate"] / max_str * 25) if max_str > 0 else 12.5
+        
+        # Competition score: fewer active = better (0-20 points)
+        if max_active > 0:
+            competition_score = ((max_active - m["active_listings"]) / max_active * 20)
+        else:
+            competition_score = 10
+        
+        m["profitability_score"] = round(price_score + speed_score + demand_score + competition_score)
+        
+        m["score_breakdown"] = {
+            "price": round(price_score),
+            "speed": round(speed_score),
+            "demand": round(demand_score),
+            "competition": round(competition_score)
+        }
+    
+    # Sort by profitability score
+    market_stats.sort(key=lambda x: x["profitability_score"], reverse=True)
+    
+    # Generate recommendation
+    best = market_stats[0]
+    reasons = []
+    
+    if best["avg_selling_price"] == max_price:
+        reasons.append(f"highest avg price (€{best['avg_selling_price']})")
+    if best["avg_days_to_sell"] and best["avg_days_to_sell"] == min_days:
+        reasons.append(f"fastest sales ({best['avg_days_to_sell']} days avg)")
+    if best["sell_through_rate"] == max_str:
+        reasons.append(f"best sell-through rate ({best['sell_through_rate']*100:.1f}%)")
+    if best["competition_level"] == "low":
+        reasons.append("low competition")
+    
+    if not reasons:
+        reasons.append(f"best overall balance (score: {best['profitability_score']})")
+    
+    # Add suggested price to recommendation
+    rec_price = None
+    if best.get("suggested_price"):
+        rec_price = best["suggested_price"]["recommended"]
+    
+    return {
+        "category": category,
+        "brand": brand,
+        "markets": market_stats,
+        "recommendation": {
+            "best_market": best["market"],
+            "score": best["profitability_score"],
+            "suggested_price": rec_price,
+            "reason": f"Best market: {', '.join(reasons)}"
+        }
+    }
+
+
 # Cache for hot categories (refreshes every 5 minutes)
 _hot_categories_cache = {
     "data": None,
@@ -24,7 +271,6 @@ def lookup_items(
     """Core lookup: find similar items and calculate stats."""
     supabase = get_supabase()
 
-    # Build base filters
     def apply_filters(query):
         if brand:
             query = query.ilike("brand", f"%{brand}%")
@@ -36,7 +282,6 @@ def lookup_items(
             query = query.eq("market", market)
         return query
 
-    # Query 1: Get recent items for display (limited)
     items_query = supabase.table("items").select("*")
     items_query = apply_filters(items_query)
     items_query = items_query.order("last_seen", desc=True).limit(500)
@@ -54,13 +299,11 @@ def lookup_items(
             "recent_items": []
         }
 
-    # Calculate stats from recent items
     prices = [i["price"] for i in items if i["price"]]
     avg_price = sum(prices) / len(prices) if prices else 0
     min_price = min(prices) if prices else 0
     max_price = max(prices) if prices else 0
 
-    # Demand score based on favorites
     avg_favorites = sum(i["favorites"] or 0 for i in items) / len(items)
     if avg_favorites > 10:
         demand_score = "high"
@@ -69,16 +312,13 @@ def lookup_items(
     else:
         demand_score = "low"
 
-    # Query 2: Separate aggregation for best markets (with caching)
     cache_key = f"{brand or ''}:{category or ''}:{size or ''}:{market or ''}"
     cached = _market_stats_cache.get(cache_key)
 
     if cached and datetime.now() < cached["expires_at"]:
-        # Use cached data
         best_markets = cached["best_markets"]
         total_items = cached["total_items"]
     else:
-        # Fetch all items with pagination
         all_market_items = []
         page_size = 1000
         offset = 0
@@ -96,11 +336,9 @@ def lookup_items(
             all_market_items.extend(batch)
             offset += page_size
 
-            # Safety limit to prevent infinite loops (max 50k items)
             if offset >= 50000:
                 break
 
-        # Aggregate by market
         market_stats = {}
         for item in all_market_items:
             m = item["market"]
@@ -122,7 +360,6 @@ def lookup_items(
 
         total_items = len(all_market_items)
 
-        # Cache the results
         _market_stats_cache[cache_key] = {
             "best_markets": best_markets,
             "total_items": total_items,
@@ -151,7 +388,6 @@ def compare_markets(
     if not markets:
         markets = ["IT", "FR", "DE", "ES", "NL", "PL", "BE", "AT", "PT"]
 
-    # Single batch query for all markets
     query = supabase.table("items").select("*").in_("market", markets)
 
     if brand:
@@ -162,7 +398,6 @@ def compare_markets(
     result = query.limit(2000).execute()
     all_items = result.data
 
-    # Group items by market
     items_by_market = {}
     for item in all_items:
         m = item["market"]
@@ -189,9 +424,7 @@ def compare_markets(
                 "avg_favorites": round(sum(favorites) / len(favorites), 2) if favorites else 0
             })
 
-    # Determine best market
     if market_data:
-        # Sort by item count (demand indicator)
         market_data.sort(key=lambda x: x["item_count"], reverse=True)
         best = market_data[0]
         reason = f"Highest demand with {best['item_count']} items, avg price €{best['avg_price']}"
@@ -216,7 +449,6 @@ def get_trends(
     """Get trending items sorted by favorites/popularity."""
     supabase = get_supabase()
 
-    # Calculate date threshold
     days = int(period.replace("d", "")) if period.endswith("d") else 7
     threshold = (datetime.now() - timedelta(days=days)).isoformat()
 
@@ -225,10 +457,8 @@ def get_trends(
     if categories and len(categories) > 0:
         query = query.in_("category", categories)
 
-    # Only get items with favorites > 0 (actually trending)
     query = query.gt("favorites", 0)
 
-    # Order by favorites (trending = most popular)
     result = query.order("favorites", desc=True).range(offset, offset + limit - 1).execute()
     items = result.data
     total_count = result.count or len(items)
@@ -244,7 +474,6 @@ def get_trends(
     prices = [i["price"] for i in items if i["price"]]
     avg_price = sum(prices) / len(prices) if prices else 0
 
-    # Format trending items
     trending_items = []
     for item in items:
         trending_items.append({
@@ -271,7 +500,6 @@ def get_hot_categories() -> dict:
     """Get the hottest (most trending) category for each market."""
     global _hot_categories_cache
 
-    # Return cached data if still valid
     if (_hot_categories_cache["data"] is not None
         and _hot_categories_cache["expires_at"]
         and datetime.now() < _hot_categories_cache["expires_at"]):
@@ -280,40 +508,31 @@ def get_hot_categories() -> dict:
     supabase = get_supabase()
     markets = ["IT", "FR", "DE", "ES", "NL", "PL", "BE", "AT", "PT"]
 
-    # Only include categories that are shown in the UI filters
     allowed_categories = {
-        # Women's clothing
         "women/dresses", "women/tops-and-t-shirts", "women/jumpers-and-sweaters",
         "women/jeans", "women/trousers-and-leggings", "women/skirts",
         "women/shorts-and-cropped-trousers", "women/outerwear", "women/suits-and-blazers",
         "women/jumpsuits-and-playsuits", "women/activewear", "women/swimwear",
         "women/lingerie-and-nightwear", "women/maternity-clothes", "women/other-clothing",
-        # Women's shoes
         "women/boots", "women/heels", "women/trainers", "women/sandals",
         "women/ballerinas", "women/slippers", "women/sports-shoes",
         "women/flip-flops-and-slides", "women/espadrilles",
-        # Women's bags
         "women/handbags", "women/backpacks", "women/shoulder-bags", "women/tote-bags",
         "women/clutches", "women/wallets-and-purses", "women/bucket-bags",
         "women/hobo-bags", "women/beach-bags", "women/gym-bags", "women/bum-bags",
-        # Women's accessories
         "women/jewellery", "women/watches", "women/sunglasses", "women/belts",
         "women/hats-and-caps", "women/scarves-and-shawls", "women/gloves",
         "women/hair-accessories", "women/umbrellas", "women/keyrings",
-        # Men's clothing
         "men/tops-and-t-shirts", "men/jumpers-and-sweaters", "men/jeans",
         "men/trousers", "men/shorts", "men/outerwear", "men/suits-and-blazers",
         "men/activewear", "men/swimwear", "men/sleepwear", "men/socks-and-underwear",
-        # Men's shoes
         "men/boots", "men/trainers", "men/formal-shoes", "men/sandals",
         "men/sports-shoes", "men/slippers", "men/flip-flops-and-slides",
-        # Men's accessories
         "men/bags-and-backpacks", "men/jewellery", "men/watches", "men/sunglasses",
         "men/belts", "men/hats-and-caps", "men/scarves-and-shawls", "men/gloves",
         "men/ties-and-bow-ties", "men/braces-and-suspenders",
     }
 
-    # Get recent items with favorites - paginated query for all markets
     threshold = (datetime.now() - timedelta(days=7)).isoformat()
 
     all_items = []
@@ -336,11 +555,9 @@ def get_hot_categories() -> dict:
         all_items.extend(batch)
         offset += page_size
 
-        # Safety limit
         if offset >= 100000:
             break
 
-    # Group by market, then aggregate by category
     market_category_stats = {}
     for item in all_items:
         market = item.get("market")
@@ -359,7 +576,6 @@ def get_hot_categories() -> dict:
         market_category_stats[market][cat]["total_favorites"] += item.get("favorites") or 0
         market_category_stats[market][cat]["count"] += 1
 
-    # Find hottest category per market
     hot_categories = {}
     for market, category_stats in market_category_stats.items():
         if category_stats:
@@ -370,7 +586,6 @@ def get_hot_categories() -> dict:
                 "item_count": hot_cat[1]["count"]
             }
 
-    # Cache the result
     result = {"hot_categories": hot_categories}
     _hot_categories_cache["data"] = result
     _hot_categories_cache["expires_at"] = datetime.now() + HOT_CATEGORIES_TTL
@@ -405,7 +620,6 @@ def get_sold_items(
     result = query.order("sold_at", desc=True).limit(limit).execute()
     items = result.data
 
-    # Calculate time to sell
     sold_items = []
     days_to_sell_list = []
 
