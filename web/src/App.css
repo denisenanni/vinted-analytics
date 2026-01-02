@@ -599,6 +599,138 @@ body {
   color: #666;
 }
 
+/* Sold Section */
+.sold-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.sold-controls {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.sold-controls .control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sold-controls .control-group > label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #666;
+}
+
+.sold-controls select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  font-size: 1rem;
+  min-width: 150px;
+}
+
+.sold-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.sold-stats .stat-card {
+  background: #f9fafb;
+  padding: 1.25rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.sold-stats .stat-value {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #09b1ba;
+}
+
+.sold-stats .stat-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
+.sold-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sold-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.sold-item:hover {
+  background: #f3f4f6;
+}
+
+.sold-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.sold-item-title {
+  font-weight: 500;
+  font-size: 0.9375rem;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sold-item-brand {
+  font-size: 0.8125rem;
+  color: #666;
+}
+
+.sold-item-details {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.sold-item-price {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #09b1ba;
+}
+
+.sold-item-price::before {
+  content: '€';
+}
+
+.sold-item-days {
+  font-size: 0.8125rem;
+  color: #666;
+  background: #e5e5e5;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
 /* Footer */
 .footer {
   background: #1a1a1a;

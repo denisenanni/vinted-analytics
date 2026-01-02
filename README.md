@@ -30,15 +30,15 @@ Secondary use case: spot arbitrage/flipping opportunities if you want to go that
 
 ### MVP (Personal Use)
 
-- [ ] **Multi-market scraping** — IT, FR, DE, ES, NL, PL, BE, AT, PT to start
-- [ ] **Item lookup** — Two ways to input:
-  - Manual form: select brand, category, size, condition
-  - Paste Vinted URL: auto-extracts item details
-- [ ] **Sold price history** — What similar items actually sold for (not just listings)
-- [ ] **Time-to-sell estimates** — Realistic expectations by brand/category/market
-- [ ] **Market comparison** — Same item type: which country has highest demand?
-- [ ] **Pricing guidance** — Suggested price range based on sold data
-- [ ] **Basic dashboard** — Search, filter, visualize
+- [x] **Multi-market scraping** — IT, FR, DE, ES, NL, PL, BE, AT, PT to start
+- [x] **Item lookup** — Two ways to input:
+  - [x] Manual form: select brand, category, size, condition
+  - [ ] Paste Vinted URL: auto-extracts item details
+- [x] **Sold price history** — What similar items actually sold for (not just listings)
+- [x] **Time-to-sell estimates** — Realistic expectations by brand/category/market
+- [x] **Market comparison** — Same item type: which country has highest demand?
+- [x] **Pricing guidance** — Suggested price range based on sold data
+- [x] **Basic dashboard** — Search, filter, visualize
 
 ### V2 (Expanded)
 

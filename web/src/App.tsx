@@ -8,11 +8,13 @@ import {
   getTrends,
   getCategories,
   getHotCategories,
+  getSold,
   type LookupResponse,
   type TrendsResponse,
   type TrendingItem,
   type CategoriesResponse,
   type HotCategoriesResponse,
+  type SoldResponse,
 } from './api/client';
 import './App.css';
 
@@ -34,9 +36,11 @@ function formatCategoryName(category: string): string {
     .join(' ');
 }
 
-function getInitialTab(): 'search' | 'trends' {
+function getInitialTab(): 'search' | 'trends' | 'sold' {
   const hash = window.location.hash.replace('#', '');
-  return hash === 'trends' ? 'trends' : 'search';
+  if (hash === 'trends') return 'trends';
+  if (hash === 'sold') return 'sold';
+  return 'search';
 }
 
 function App() {
@@ -47,10 +51,13 @@ function App() {
   const [trendItems, setTrendItems] = useState<TrendingItem[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'search' | 'trends'>(getInitialTab);
+  const [activeTab, setActiveTab] = useState<'search' | 'trends' | 'sold'>(getInitialTab);
+  const [sold, setSold] = useState<SoldResponse | null>(null);
+  const [soldMarket, setSoldMarket] = useState('IT');
+  const [soldPeriod, setSoldPeriod] = useState('30d');
 
   // Update URL hash when tab changes
-  const handleTabChange = (tab: 'search' | 'trends') => {
+  const handleTabChange = (tab: 'search' | 'trends' | 'sold') => {
     setActiveTab(tab);
     window.location.hash = tab;
   };
@@ -77,6 +84,9 @@ function App() {
   useEffect(() => {
     if (activeTab === 'trends' && !trends) {
       handleLoadTrends(selectedMarket, selectedCategories, true);
+    }
+    if (activeTab === 'sold' && !sold) {
+      handleLoadSold(soldMarket, soldPeriod);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -178,6 +188,30 @@ function App() {
     handleLoadTrends(selectedMarket, selectedCategories, false);
   };
 
+  const handleLoadSold = async (market: string, period: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await getSold(undefined, undefined, market, period, 50);
+      setSold(response.data);
+    } catch (err) {
+      setError('Failed to fetch sold items. Make sure the API is running.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSoldMarketChange = (market: string) => {
+    setSoldMarket(market);
+    handleLoadSold(market, soldPeriod);
+  };
+
+  const handleSoldPeriodChange = (period: string) => {
+    setSoldPeriod(period);
+    handleLoadSold(soldMarket, period);
+  };
+
   return (
     <div className="app">
       <header className="header">
@@ -200,6 +234,15 @@ function App() {
           }}
         >
           Trends
+        </button>
+        <button
+          className={activeTab === 'sold' ? 'active' : ''}
+          onClick={() => {
+            handleTabChange('sold');
+            if (!sold) handleLoadSold(soldMarket, soldPeriod);
+          }}
+        >
+          Sold
         </button>
       </nav>
 
@@ -344,6 +387,90 @@ function App() {
             )}
 
             {!trends && loading && <p className="loading">Loading trends...</p>}
+          </div>
+        )}
+
+        {activeTab === 'sold' && (
+          <div className="sold-section">
+            <div className="sold-controls">
+              <div className="control-group">
+                <label>Market:</label>
+                <select
+                  value={soldMarket}
+                  onChange={(e) => handleSoldMarketChange(e.target.value)}
+                >
+                  {[
+                    { code: 'IT', name: 'Italy' },
+                    { code: 'FR', name: 'France' },
+                    { code: 'DE', name: 'Germany' },
+                    { code: 'ES', name: 'Spain' },
+                    { code: 'NL', name: 'Netherlands' },
+                    { code: 'PL', name: 'Poland' },
+                    { code: 'BE', name: 'Belgium' },
+                    { code: 'AT', name: 'Austria' },
+                    { code: 'PT', name: 'Portugal' },
+                  ].map((m) => (
+                    <option key={m.code} value={m.code}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="control-group">
+                <label>Period:</label>
+                <select
+                  value={soldPeriod}
+                  onChange={(e) => handleSoldPeriodChange(e.target.value)}
+                >
+                  <option value="7d">Last 7 days</option>
+                  <option value="30d">Last 30 days</option>
+                  <option value="90d">Last 90 days</option>
+                </select>
+              </div>
+            </div>
+
+            {sold && (
+              <div className="sold-results">
+                <div className="sold-stats">
+                  <div className="stat-card">
+                    <span className="stat-value">{sold.total_sold}</span>
+                    <span className="stat-label">Items Sold</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-value">{sold.avg_price.toFixed(2)}</span>
+                    <span className="stat-label">Avg Price</span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-value">
+                      {sold.avg_days_to_sell !== null ? sold.avg_days_to_sell.toFixed(1) : '-'}
+                    </span>
+                    <span className="stat-label">Avg Days to Sell</span>
+                  </div>
+                </div>
+
+                <div className="sold-items-list">
+                  {sold.items.map((item) => (
+                    <div key={item.vinted_id} className="sold-item">
+                      <div className="sold-item-info">
+                        <span className="sold-item-title">{item.title}</span>
+                        {item.brand && <span className="sold-item-brand">{item.brand}</span>}
+                      </div>
+                      <div className="sold-item-details">
+                        <span className="sold-item-price">{item.price.toFixed(2)}</span>
+                        {item.days_to_sell !== null && (
+                          <span className="sold-item-days">{item.days_to_sell}d to sell</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!sold && loading && <p className="loading">Loading sold items...</p>}
+            {sold && sold.items.length === 0 && (
+              <p className="no-data">No sold items found for this period.</p>
+            )}
           </div>
         )}
       </main>

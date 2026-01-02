@@ -148,3 +148,33 @@ export interface HotCategoriesResponse {
 
 export const getHotCategories = () =>
   cachedGet<HotCategoriesResponse>('/api/hot-categories', {});
+
+export interface SoldItem {
+  vinted_id: string;
+  title: string;
+  price: number;
+  brand: string | null;
+  market: string;
+  first_seen: string | null;
+  sold_at: string | null;
+  days_to_sell: number | null;
+}
+
+export interface SoldResponse {
+  query: Record<string, string | null>;
+  total_sold: number;
+  avg_price: number;
+  avg_days_to_sell: number | null;
+  items: SoldItem[];
+}
+
+export const getSold = (
+  brand?: string,
+  category?: string,
+  market = 'IT',
+  period = '30d',
+  limit = 50
+) =>
+  api.get<SoldResponse>('/api/sold', {
+    params: { brand, category, market, period, limit },
+  });
