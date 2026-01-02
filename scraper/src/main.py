@@ -26,17 +26,20 @@ async def main(market: str = "IT", category: str = "women/dresses", pages: int =
         await save_items(items)
 
         # Mark items as sold if they disappeared (only if we scraped enough pages)
-        if pages >= 3:
+        if pages >= 2:
             active_ids = [item.vinted_id for item in items]
             await mark_sold_items(market, category, active_ids)
 
-    # Show stats
-    stats = await get_stats()
-    print(f"\nDatabase stats:")
-    print(f"  Total items: {stats['total']}")
-    print(f"  Active: {stats['active']}")
-    print(f"  Sold: {stats['sold']}")
-    print(f"  Price changes tracked: {stats['price_changes']}")
+    # Show stats (non-critical, don't fail if it times out)
+    try:
+        stats = await get_stats()
+        print(f"\nDatabase stats:")
+        print(f"  Total items: {stats['total']}")
+        print(f"  Active: {stats['active']}")
+        print(f"  Sold: {stats['sold']}")
+        print(f"  Price changes tracked: {stats['price_changes']}")
+    except Exception as e:
+        print(f"\nCould not fetch stats (non-critical): {e}")
 
 
 MARKETS = ["IT", "FR", "DE", "ES", "NL", "PL", "BE", "AT", "PT"]

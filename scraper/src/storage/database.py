@@ -221,16 +221,23 @@ async def mark_sold_items_supabase(market: str, category: str, active_vinted_ids
 async def get_stats_supabase() -> dict:
     supabase = get_supabase()
 
-    total = supabase.table("items").select("id", count="exact").execute()
-    active = supabase.table("items").select("id", count="exact").eq("status", "active").execute()
-    sold = supabase.table("items").select("id", count="exact").eq("status", "sold").execute()
-    price_changes = supabase.table("price_history").select("id", count="exact").execute()
+    # Single lightweight query - fetch only status column, count in Python
+    # Much faster than 4 separate count queries that timeout on free tier
+    items_result = supabase.table("items").select("status").execute()
+    items = items_result.data
+
+    total = len(items)
+    active = sum(1 for item in items if item.get("status") == "active")
+    sold = sum(1 for item in items if item.get("status") == "sold")
+
+    # Price history - use head=True for count-only (no data transfer)
+    price_result = supabase.table("price_history").select("id", count="exact", head=True).execute()
 
     return {
-        "total": total.count,
-        "active": active.count,
-        "sold": sold.count,
-        "price_changes": price_changes.count
+        "total": total,
+        "active": active,
+        "sold": sold,
+        "price_changes": price_result.count or 0
     }
 
 
