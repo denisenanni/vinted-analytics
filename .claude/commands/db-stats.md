@@ -1,7 +1,49 @@
-Check database statistics and health.
+Check database statistics and data consistency.
 
-Run this Python script to get current DB stats:
+## Quick Check via API
+```bash
+curl http://localhost:8000/api/db-stats | jq
+```
 
+This returns:
+```json
+{
+  "total_items": 12500,
+  "by_market": {
+    "IT": {"total": 3000, "active": 2500, "sold": 500, "with_favorites": 1200},
+    "FR": {"total": 2800, "active": 2300, "sold": 500, "with_favorites": 900},
+    ...
+  },
+  "recent_with_favorites_7d": {
+    "IT": 800,
+    "FR": 600,
+    ...
+  },
+  "markets_scraped": ["IT", "FR", "DE", ...]
+}
+```
+
+## Interpreting Results
+
+**If a market shows 0 in Trends tab:**
+
+1. Check `by_market.{MARKET}` exists
+   - Missing = scraper not running for that market
+   
+2. Check `by_market.{MARKET}.with_favorites`
+   - 0 = scraper working but items have no favorites
+   
+3. Check `recent_with_favorites_7d.{MARKET}`
+   - 0 = items exist but are stale (last_seen > 7 days ago)
+   - This is what Trends uses!
+
+**Data consistency checks:**
+
+- `recent_with_favorites_7d` should match what Trends tab shows
+- `with_favorites` should be >= `recent_with_favorites_7d`
+- All 9 markets should be present: IT, FR, DE, ES, NL, PL, BE, AT, PT
+
+## Manual Query (if API not running)
 ```python
 import os
 from dotenv import load_dotenv
@@ -14,26 +56,15 @@ supabase = create_client(
     os.getenv('SUPABASE_KEY')
 )
 
-# Get counts
-items = supabase.table("items").select("status", count="exact", head=True).execute()
-active = supabase.table("items").select("id", count="exact", head=True).eq("status", "active").execute()
-sold = supabase.table("items").select("id", count="exact", head=True).eq("status", "sold").execute()
-price_history = supabase.table("price_history").select("id", count="exact", head=True).execute()
+# Count by market
+result = supabase.table("items").select("market", count="exact").execute()
+print(f"Total items: {result.count}")
 
-print(f"Total items: {items.count}")
-print(f"Active: {active.count}")
-print(f"Sold: {sold.count}")
-print(f"Price history records: {price_history.count}")
+# Check specific market
+fr_items = supabase.table("items").select("id", count="exact").eq("market", "FR").execute()
+print(f"France items: {fr_items.count}")
 
-# Items per market
-markets = supabase.table("items").select("market").execute()
-from collections import Counter
-market_counts = Counter(item['market'] for item in markets.data)
-print("\nItems per market:")
-for market, count in sorted(market_counts.items(), key=lambda x: -x[1]):
-    print(f"  {market}: {count}")
+# Check France with favorites
+fr_favs = supabase.table("items").select("id", count="exact").eq("market", "FR").gt("favorites", 0).execute()
+print(f"France with favorites: {fr_favs.count}")
 ```
-
-Run from project root: `python -c "..."`
-
-Or use the API endpoint: `curl http://localhost:8000/api/stats` (if implemented)

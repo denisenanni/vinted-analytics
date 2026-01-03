@@ -497,6 +497,58 @@ def get_trends(
     }
 
 
+def get_db_stats() -> dict:
+    """Get database statistics for debugging and consistency checks."""
+    supabase = get_supabase()
+    
+    # Get counts by market and status
+    result = supabase.table("items").select("market, status, favorites").execute()
+    items = result.data
+    
+    stats_by_market = {}
+    for item in items:
+        market = item.get("market")
+        status = item.get("status")
+        favorites = item.get("favorites") or 0
+        
+        if market not in stats_by_market:
+            stats_by_market[market] = {
+                "total": 0,
+                "active": 0,
+                "sold": 0,
+                "with_favorites": 0
+            }
+        
+        stats_by_market[market]["total"] += 1
+        if status == "active":
+            stats_by_market[market]["active"] += 1
+        elif status == "sold":
+            stats_by_market[market]["sold"] += 1
+        if favorites > 0:
+            stats_by_market[market]["with_favorites"] += 1
+    
+    # Get recent items (last 7 days) with favorites
+    threshold = (datetime.now() - timedelta(days=7)).isoformat()
+    recent_result = supabase.table("items")\
+        .select("market", count="exact")\
+        .gte("last_seen", threshold)\
+        .gt("favorites", 0)\
+        .execute()
+    
+    recent_by_market = {}
+    if recent_result.data:
+        for item in recent_result.data:
+            market = item.get("market")
+            recent_by_market[market] = recent_by_market.get(market, 0) + 1
+    
+    return {
+        "total_items": len(items),
+        "by_market": stats_by_market,
+        "recent_with_favorites_7d": recent_by_market,
+        "markets_scraped": list(stats_by_market.keys())
+    }
+
+
 def get_hot_categories() -> dict:
     """Get the hottest (most trending) category for each market."""
     global _hot_categories_cache

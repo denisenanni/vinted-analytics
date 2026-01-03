@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Query
 from typing import Optional, List
 from ..services import analytics
-from ..models.schemas import LookupResponse, CompareResponse, TrendsResponse, SoldResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse
 from ..models.schemas import (
     LookupResponse, CompareResponse, TrendsResponse, SoldResponse, 
     MarketProfitabilityResponse, TimingInsightsResponse, ArbitrageResponse
@@ -248,3 +247,17 @@ async def hot_categories():
 async def health():
     """Health check endpoint."""
     return {"status": "ok"}
+
+
+@router.get("/db-stats")
+async def db_stats():
+    """
+    Get database statistics for debugging data consistency.
+    
+    Shows:
+    - Total items per market
+    - Active vs sold breakdown
+    - Items with favorites > 0
+    - Recent items (last 7 days) matching trends filter
+    """
+    return analytics.get_db_stats()
