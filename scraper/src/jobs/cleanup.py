@@ -11,12 +11,27 @@ This script:
 
 import asyncio
 import os
+import time
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 load_dotenv()
 
 USE_SUPABASE = os.getenv("USE_SUPABASE", "false").lower() == "true"
+
+
+def retry_supabase(func, max_retries=3, delay=2):
+    """Retry a Supabase operation with exponential backoff."""
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait = delay * (2 ** attempt)
+                print(f"Supabase error (attempt {attempt + 1}/{max_retries}), retrying in {wait}s: {type(e).__name__}")
+                time.sleep(wait)
+            else:
+                raise
 
 
 def get_supabase():
@@ -110,13 +125,35 @@ async def aggregate_daily_stats_supabase():
 
 
 async def cleanup_stale_items_supabase():
-    """Delete active items not seen in 7 days. Uses batched deletes to avoid timeout."""
+    """Delete active items not seen in 7 days. Uses paginated select and batched deletes."""
     supabase = get_supabase()
     cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
 
-    # First, get IDs to delete (faster than DELETE with filter)
-    result = supabase.table("items").select("id").eq("status", "active").lt("last_seen", cutoff).execute()
-    ids_to_delete = [row["id"] for row in result.data]
+    # Fetch IDs in pages to avoid timeout
+    ids_to_delete = []
+    page_size = 500
+    offset = 0
+    
+    while True:
+        try:
+            result = retry_supabase(
+                lambda: supabase.table("items")
+                    .select("id")
+                    .eq("status", "active")
+                    .lt("last_seen", cutoff)
+                    .range(offset, offset + page_size - 1)
+                    .execute()
+            )
+            batch = result.data
+            if not batch:
+                break
+            ids_to_delete.extend([row["id"] for row in batch])
+            offset += page_size
+            if offset >= 10000:  # Safety limit
+                break
+        except Exception as e:
+            print(f"Warning: failed to fetch stale items: {e}")
+            break
 
     if not ids_to_delete:
         print("No stale active items to delete")
@@ -128,7 +165,9 @@ async def cleanup_stale_items_supabase():
     for i in range(0, len(ids_to_delete), batch_size):
         batch = ids_to_delete[i:i + batch_size]
         try:
-            supabase.table("items").delete().in_("id", batch).execute()
+            retry_supabase(
+                lambda: supabase.table("items").delete().in_("id", batch).execute()
+            )
             deleted += len(batch)
         except Exception as e:
             print(f"Warning: batch delete failed: {e}")
@@ -138,13 +177,35 @@ async def cleanup_stale_items_supabase():
 
 
 async def cleanup_old_sold_items_supabase():
-    """Delete sold items older than 90 days. Uses batched deletes to avoid timeout."""
+    """Delete sold items older than 90 days. Uses paginated select and batched deletes."""
     supabase = get_supabase()
     cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
 
-    # First, get IDs to delete
-    result = supabase.table("items").select("id").eq("status", "sold").lt("sold_at", cutoff).execute()
-    ids_to_delete = [row["id"] for row in result.data]
+    # Fetch IDs in pages
+    ids_to_delete = []
+    page_size = 500
+    offset = 0
+    
+    while True:
+        try:
+            result = retry_supabase(
+                lambda: supabase.table("items")
+                    .select("id")
+                    .eq("status", "sold")
+                    .lt("sold_at", cutoff)
+                    .range(offset, offset + page_size - 1)
+                    .execute()
+            )
+            batch = result.data
+            if not batch:
+                break
+            ids_to_delete.extend([row["id"] for row in batch])
+            offset += page_size
+            if offset >= 10000:
+                break
+        except Exception as e:
+            print(f"Warning: failed to fetch old sold items: {e}")
+            break
 
     if not ids_to_delete:
         print("No old sold items to delete")
@@ -156,7 +217,9 @@ async def cleanup_old_sold_items_supabase():
     for i in range(0, len(ids_to_delete), batch_size):
         batch = ids_to_delete[i:i + batch_size]
         try:
-            supabase.table("items").delete().in_("id", batch).execute()
+            retry_supabase(
+                lambda: supabase.table("items").delete().in_("id", batch).execute()
+            )
             deleted += len(batch)
         except Exception as e:
             print(f"Warning: batch delete failed: {e}")
@@ -166,13 +229,34 @@ async def cleanup_old_sold_items_supabase():
 
 
 async def cleanup_old_price_history_supabase():
-    """Delete price history older than 90 days. Uses batched deletes to avoid timeout."""
+    """Delete price history older than 90 days. Uses paginated select and batched deletes."""
     supabase = get_supabase()
     cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
 
-    # First, get IDs to delete
-    result = supabase.table("price_history").select("id").lt("recorded_at", cutoff).execute()
-    ids_to_delete = [row["id"] for row in result.data]
+    # Fetch IDs in pages
+    ids_to_delete = []
+    page_size = 500
+    offset = 0
+    
+    while True:
+        try:
+            result = retry_supabase(
+                lambda: supabase.table("price_history")
+                    .select("id")
+                    .lt("recorded_at", cutoff)
+                    .range(offset, offset + page_size - 1)
+                    .execute()
+            )
+            batch = result.data
+            if not batch:
+                break
+            ids_to_delete.extend([row["id"] for row in batch])
+            offset += page_size
+            if offset >= 10000:
+                break
+        except Exception as e:
+            print(f"Warning: failed to fetch old price history: {e}")
+            break
 
     if not ids_to_delete:
         print("No old price history to delete")
@@ -184,7 +268,9 @@ async def cleanup_old_price_history_supabase():
     for i in range(0, len(ids_to_delete), batch_size):
         batch = ids_to_delete[i:i + batch_size]
         try:
-            supabase.table("price_history").delete().in_("id", batch).execute()
+            retry_supabase(
+                lambda: supabase.table("price_history").delete().in_("id", batch).execute()
+            )
             deleted += len(batch)
         except Exception as e:
             print(f"Warning: batch delete failed: {e}")
@@ -194,18 +280,55 @@ async def cleanup_old_price_history_supabase():
 
 
 async def cleanup_orphaned_price_history_supabase():
-    """Delete price history for items that no longer exist. Uses batched deletes."""
+    """Delete price history for items that no longer exist. Uses paginated fetch and batched deletes."""
     supabase = get_supabase()
 
-    # Get all valid vinted_ids
-    items_result = supabase.table("items").select("vinted_id").execute()
-    valid_ids = {item["vinted_id"] for item in items_result.data}
+    # Get all valid vinted_ids with pagination
+    valid_ids = set()
+    page_size = 1000
+    offset = 0
+    
+    while True:
+        try:
+            result = retry_supabase(
+                lambda: supabase.table("items")
+                    .select("vinted_id")
+                    .range(offset, offset + page_size - 1)
+                    .execute()
+            )
+            batch = result.data
+            if not batch:
+                break
+            valid_ids.update(item["vinted_id"] for item in batch)
+            offset += page_size
+            if offset >= 100000:
+                break
+        except Exception as e:
+            print(f"Warning: failed to fetch items: {e}")
+            break
 
-    # Get all price_history records
-    history_result = supabase.table("price_history").select("id, vinted_id").execute()
-
-    # Find orphans
-    orphan_ids = [h["id"] for h in history_result.data if h["vinted_id"] not in valid_ids]
+    # Get price_history records with pagination and find orphans
+    orphan_ids = []
+    offset = 0
+    
+    while True:
+        try:
+            result = retry_supabase(
+                lambda: supabase.table("price_history")
+                    .select("id, vinted_id")
+                    .range(offset, offset + page_size - 1)
+                    .execute()
+            )
+            batch = result.data
+            if not batch:
+                break
+            orphan_ids.extend(h["id"] for h in batch if h["vinted_id"] not in valid_ids)
+            offset += page_size
+            if offset >= 100000:
+                break
+        except Exception as e:
+            print(f"Warning: failed to fetch price history: {e}")
+            break
 
     if not orphan_ids:
         print("No orphaned price history records found")
@@ -217,7 +340,9 @@ async def cleanup_orphaned_price_history_supabase():
     for i in range(0, len(orphan_ids), batch_size):
         batch = orphan_ids[i:i + batch_size]
         try:
-            supabase.table("price_history").delete().in_("id", batch).execute()
+            retry_supabase(
+                lambda: supabase.table("price_history").delete().in_("id", batch).execute()
+            )
             deleted += len(batch)
         except Exception as e:
             print(f"Warning: batch delete failed: {e}")
