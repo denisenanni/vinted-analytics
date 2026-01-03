@@ -1,4 +1,5 @@
 import os
+import time
 import aiosqlite
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -8,6 +9,21 @@ from dotenv import load_dotenv
 from ..models.item import VintedItem
 
 load_dotenv()
+
+
+def retry_supabase(func, max_retries=3, delay=2):
+    """Retry a Supabase operation with exponential backoff."""
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait = delay * (2 ** attempt)  # 2, 4, 8 seconds
+                print(f"Supabase error (attempt {attempt + 1}/{max_retries}), retrying in {wait}s: {type(e).__name__}")
+                time.sleep(wait)
+            else:
+                raise
+
 
 # Database configuration
 USE_SUPABASE = os.getenv("USE_SUPABASE", "false").lower() == "true"
@@ -155,40 +171,50 @@ async def save_items_supabase(items: List[VintedItem]) -> dict:
     stats = {"new": 0, "updated": 0, "price_changes": 0}
     supabase = get_supabase()
 
-    for item in items:
-        # Check if exists
-        result = supabase.table("items").select("price").eq("vinted_id", item.vinted_id).execute()
+    for i, item in enumerate(items):
+        # Rate limiting: pause every 50 items to avoid overwhelming Supabase
+        if i > 0 and i % 50 == 0:
+            time.sleep(1)
+
+        # Check if exists (with retry)
+        result = retry_supabase(
+            lambda: supabase.table("items").select("price").eq("vinted_id", item.vinted_id).execute()
+        )
         existing = result.data[0] if result.data else None
 
         if existing:
             old_price = existing["price"]
             if old_price != item.price:
-                supabase.table("price_history").insert({
-                    "vinted_id": item.vinted_id,
-                    "price": item.price
-                }).execute()
+                retry_supabase(
+                    lambda: supabase.table("price_history").insert({
+                        "vinted_id": item.vinted_id,
+                        "price": item.price
+                    }).execute()
+                )
                 stats["price_changes"] += 1
             stats["updated"] += 1
         else:
             stats["new"] += 1
 
-        # Upsert item
-        supabase.table("items").upsert({
-            "vinted_id": item.vinted_id,
-            "title": item.title,
-            "price": item.price,
-            "currency": item.currency,
-            "brand": item.brand,
-            "size": item.size,
-            "url": item.url,
-            "image_url": item.image_url,
-            "favorites": item.favorites,
-            "market": item.market,
-            "category": item.category,
-            "scraped_at": item.scraped_at.isoformat(),
-            "last_seen": datetime.now().isoformat(),
-            "status": "active"
-        }, on_conflict="vinted_id").execute()
+        # Upsert item (with retry)
+        retry_supabase(
+            lambda: supabase.table("items").upsert({
+                "vinted_id": item.vinted_id,
+                "title": item.title,
+                "price": item.price,
+                "currency": item.currency,
+                "brand": item.brand,
+                "size": item.size,
+                "url": item.url,
+                "image_url": item.image_url,
+                "favorites": item.favorites,
+                "market": item.market,
+                "category": item.category,
+                "scraped_at": item.scraped_at.isoformat(),
+                "last_seen": datetime.now().isoformat(),
+                "status": "active"
+            }, on_conflict="vinted_id").execute()
+        )
 
     return stats
 
@@ -197,23 +223,27 @@ async def mark_sold_items_supabase(market: str, category: str, active_vinted_ids
     threshold = (datetime.now() - timedelta(hours=hours_threshold)).isoformat()
     supabase = get_supabase()
 
-    # Get items to mark as sold
-    result = supabase.table("items")\
-        .select("vinted_id")\
-        .eq("market", market)\
-        .eq("category", category)\
-        .eq("status", "active")\
-        .lt("last_seen", threshold)\
-        .not_.in_("vinted_id", active_vinted_ids)\
-        .execute()
+    # Get items to mark as sold (with retry)
+    result = retry_supabase(
+        lambda: supabase.table("items")
+            .select("vinted_id")
+            .eq("market", market)
+            .eq("category", category)
+            .eq("status", "active")
+            .lt("last_seen", threshold)
+            .not_.in_("vinted_id", active_vinted_ids)
+            .execute()
+    )
 
     sold_ids = [row["vinted_id"] for row in result.data]
 
     if sold_ids:
-        supabase.table("items")\
-            .update({"status": "sold", "sold_at": datetime.now().isoformat()})\
-            .in_("vinted_id", sold_ids)\
-            .execute()
+        retry_supabase(
+            lambda: supabase.table("items")
+                .update({"status": "sold", "sold_at": datetime.now().isoformat()})
+                .in_("vinted_id", sold_ids)
+                .execute()
+        )
 
     return len(sold_ids)
 
@@ -223,7 +253,9 @@ async def get_stats_supabase() -> dict:
 
     # Single lightweight query - fetch only status column, count in Python
     # Much faster than 4 separate count queries that timeout on free tier
-    items_result = supabase.table("items").select("status").execute()
+    items_result = retry_supabase(
+        lambda: supabase.table("items").select("status").execute()
+    )
     items = items_result.data
 
     total = len(items)
@@ -231,7 +263,9 @@ async def get_stats_supabase() -> dict:
     sold = sum(1 for item in items if item.get("status") == "sold")
 
     # Price history - use head=True for count-only (no data transfer)
-    price_result = supabase.table("price_history").select("id", count="exact", head=True).execute()
+    price_result = retry_supabase(
+        lambda: supabase.table("price_history").select("id", count="exact", head=True).execute()
+    )
 
     return {
         "total": total,
@@ -291,7 +325,9 @@ async def get_item_by_vinted_id(vinted_id: str) -> Optional[dict]:
     """Get item by vinted_id (used for tests)."""
     if USE_SUPABASE:
         supabase = get_supabase()
-        result = supabase.table("items").select("*").eq("vinted_id", vinted_id).execute()
+        result = retry_supabase(
+            lambda: supabase.table("items").select("*").eq("vinted_id", vinted_id).execute()
+        )
         return result.data[0] if result.data else None
     else:
         async with aiosqlite.connect(DB_PATH) as db:
