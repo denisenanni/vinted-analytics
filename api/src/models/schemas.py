@@ -160,30 +160,26 @@ class SoldResponse(BaseModel):
 class ScoreBreakdown(BaseModel):
     price: int = Field(
         ...,
-        description="Price score (0-25). Based on average selling price compared to other markets.",
+        description="Price score component. Based on average selling price compared to other markets.",
         ge=0,
-        le=25,
         example=20
     )
     speed: int = Field(
         ...,
-        description="Speed score (0-25). Based on average days to sell. Faster is better.",
+        description="Speed score component. Based on average days to sell. Faster is better.",
         ge=0,
-        le=25,
         example=18
     )
     demand: int = Field(
         ...,
-        description="Demand score (0-25). Based on sell-through rate and favorites.",
+        description="Demand score component. Based on sell-through rate and favorites.",
         ge=0,
-        le=25,
         example=22
     )
     competition: int = Field(
         ...,
-        description="Competition score (0-25). Lower competition = higher score.",
+        description="Competition score component. Lower competition = higher score.",
         ge=0,
-        le=25,
         example=18
     )
 
