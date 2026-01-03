@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query
-from typing import Optional, List
+from typing import Optional
 from ..services import analytics
 from ..models.schemas import (
     LookupResponse, CompareResponse, TrendsResponse, SoldResponse,
