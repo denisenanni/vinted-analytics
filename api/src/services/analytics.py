@@ -726,6 +726,17 @@ def get_timing_insights(
     best_day_idx = max(day_counts, key=day_counts.get)
     best_day = day_names[best_day_idx]
     
+    # Check if data is too skewed (one day has >50% of sales or less than 5 days have data)
+    max_day_pct = max(d["percentage"] for d in day_breakdown)
+    days_with_sales = sum(1 for d in day_breakdown if d["sales"] > 0)
+    
+    if days_with_sales < 5 or max_day_pct > 50:
+        # Not enough spread - return data but no recommendation
+        best_day = None
+        message = "Not enough data spread across days yet. Need more time to analyze patterns."
+    else:
+        message = None
+    
     # Analyze trending categories (this week vs last week)
     this_week = [i for i in sold_items if i.get("sold_at") and i["sold_at"] >= threshold_7d]
     last_week = [i for i in sold_items if i.get("sold_at") and threshold_14d <= i["sold_at"] < threshold_7d]
@@ -776,7 +787,8 @@ def get_timing_insights(
         "day_breakdown": day_breakdown,
         "trending_up": trending_up,
         "trending_down": trending_down,
-        "total_sales_analyzed": total_sales
+        "total_sales_analyzed": total_sales,
+        "message": message
     }
 
 
