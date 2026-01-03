@@ -1582,3 +1582,38 @@ body {
     transform: rotate(90deg);
   }
 }
+
+/* Sort Controls */
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.sort-controls label {
+  font-weight: 500;
+  color: #374151;
+}
+
+.sort-controls select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  cursor: pointer;
+}
+
+.sort-controls select:hover {
+  border-color: #9ca3af;
+}
+
+.sort-controls select:focus {
+  outline: none;
+  border-color: #09b1ba;
+  box-shadow: 0 0 0 2px rgba(9, 177, 186, 0.2);
+}

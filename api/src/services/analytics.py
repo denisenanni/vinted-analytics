@@ -485,7 +485,8 @@ def get_trends(
             "image_url": item.get("image_url"),
             "favorites": item.get("favorites") or 0,
             "market": item["market"],
-            "category": item.get("category")
+            "category": item.get("category"),
+            "first_seen": item.get("first_seen")
         })
 
     return {

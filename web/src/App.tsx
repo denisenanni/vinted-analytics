@@ -75,6 +75,7 @@ function App() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [offset, setOffset] = useState(0);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'favorites' | 'price_asc' | 'price_desc' | 'newest' | 'oldest'>('favorites');
   const ITEMS_PER_PAGE = 20;
 
   useEffect(() => {
@@ -218,6 +219,27 @@ function App() {
     handleLoadSold(soldMarket, period);
   };
 
+  // Sort trending items
+  const sortedTrendItems = [...trendItems].sort((a, b) => {
+    switch (sortBy) {
+      case 'price_asc':
+        return a.price - b.price;
+      case 'price_desc':
+        return b.price - a.price;
+      case 'newest':
+        if (!a.first_seen) return 1;
+        if (!b.first_seen) return -1;
+        return new Date(b.first_seen).getTime() - new Date(a.first_seen).getTime();
+      case 'oldest':
+        if (!a.first_seen) return 1;
+        if (!b.first_seen) return -1;
+        return new Date(a.first_seen).getTime() - new Date(b.first_seen).getTime();
+      case 'favorites':
+      default:
+        return b.favorites - a.favorites;
+    }
+  });
+
   return (
     <div className="app">
       <header className="header">
@@ -329,6 +351,20 @@ function App() {
               </div>
             </div>
 
+            <div className="sort-controls">
+              <label>Sort by:</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              >
+                <option value="favorites">Most Popular</option>
+                <option value="price_asc">Price: Low to High</option>
+                <option value="price_desc">Price: High to Low</option>
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+              </select>
+            </div>
+
             {categories && (
               <div className={`category-filter ${filterOpen ? 'open' : ''}`}>
                 <button
@@ -397,7 +433,7 @@ function App() {
             )}
 
             {trends && (
-              <TrendsChart data={{ ...trends, trending_items: trendItems }} />
+              <TrendsChart data={{ ...trends, trending_items: sortedTrendItems }} />
             )}
 
             {hasMore && !loading && (

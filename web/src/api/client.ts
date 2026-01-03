@@ -72,6 +72,7 @@ export interface TrendingItem {
   favorites: number;
   market: string;
   category: string | null;
+  first_seen: string | null;
 }
 
 export interface TrendsResponse {
