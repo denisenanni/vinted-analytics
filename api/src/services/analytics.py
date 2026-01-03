@@ -659,3 +659,251 @@ def get_sold_items(
         "avg_days_to_sell": round(avg_days, 1) if avg_days else None,
         "items": sold_items
     }
+
+
+def get_timing_insights(
+    category: Optional[str] = None,
+    market: str = "IT"
+) -> dict:
+    """
+    Analyze timing patterns for sales.
+    - Best day of week to list
+    - Trending categories (up/down vs last period)
+    """
+    supabase = get_supabase()
+    
+    # Get sold items from last 30 days
+    threshold_30d = (datetime.now() - timedelta(days=30)).isoformat()
+    threshold_7d = (datetime.now() - timedelta(days=7)).isoformat()
+    threshold_14d = (datetime.now() - timedelta(days=14)).isoformat()
+    
+    query = supabase.table("items")\
+        .select("sold_at, category, price")\
+        .eq("market", market)\
+        .eq("status", "sold")\
+        .gte("sold_at", threshold_30d)
+    
+    if category:
+        query = query.eq("category", category)
+    
+    result = query.limit(5000).execute()
+    sold_items = result.data
+    
+    if not sold_items:
+        return {
+            "market": market,
+            "best_day": None,
+            "day_breakdown": [],
+            "trending_up": [],
+            "trending_down": [],
+            "message": "Not enough sold data yet"
+        }
+    
+    # Analyze by day of week
+    day_counts = {i: 0 for i in range(7)}  # 0=Monday, 6=Sunday
+    day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    
+    for item in sold_items:
+        sold_at = item.get("sold_at")
+        if sold_at:
+            try:
+                dt = datetime.fromisoformat(sold_at.replace("Z", "+00:00"))
+                day_counts[dt.weekday()] += 1
+            except:
+                pass
+    
+    total_sales = sum(day_counts.values())
+    day_breakdown = []
+    for i, name in enumerate(day_names):
+        count = day_counts[i]
+        pct = round(count / total_sales * 100, 1) if total_sales > 0 else 0
+        day_breakdown.append({
+            "day": name,
+            "sales": count,
+            "percentage": pct
+        })
+    
+    best_day_idx = max(day_counts, key=day_counts.get)
+    best_day = day_names[best_day_idx]
+    
+    # Analyze trending categories (this week vs last week)
+    this_week = [i for i in sold_items if i.get("sold_at") and i["sold_at"] >= threshold_7d]
+    last_week = [i for i in sold_items if i.get("sold_at") and threshold_14d <= i["sold_at"] < threshold_7d]
+    
+    def count_by_category(items):
+        counts = {}
+        for item in items:
+            cat = item.get("category")
+            if cat:
+                counts[cat] = counts.get(cat, 0) + 1
+        return counts
+    
+    this_week_counts = count_by_category(this_week)
+    last_week_counts = count_by_category(last_week)
+    
+    # Calculate trends
+    trends = []
+    all_cats = set(this_week_counts.keys()) | set(last_week_counts.keys())
+    
+    for cat in all_cats:
+        this_count = this_week_counts.get(cat, 0)
+        last_count = last_week_counts.get(cat, 0)
+        
+        if last_count > 0:
+            change_pct = round((this_count - last_count) / last_count * 100, 1)
+        elif this_count > 0:
+            change_pct = 100  # New category
+        else:
+            change_pct = 0
+        
+        if this_count >= 3 or last_count >= 3:  # Min threshold
+            trends.append({
+                "category": cat,
+                "this_week": this_count,
+                "last_week": last_count,
+                "change_percent": change_pct
+            })
+    
+    # Sort and split into up/down
+    trending_up = sorted([t for t in trends if t["change_percent"] > 10], 
+                         key=lambda x: x["change_percent"], reverse=True)[:5]
+    trending_down = sorted([t for t in trends if t["change_percent"] < -10], 
+                           key=lambda x: x["change_percent"])[:5]
+    
+    return {
+        "market": market,
+        "best_day": best_day,
+        "day_breakdown": day_breakdown,
+        "trending_up": trending_up,
+        "trending_down": trending_down,
+        "total_sales_analyzed": total_sales
+    }
+
+
+def get_arbitrage_opportunities(
+    category: Optional[str] = None,
+    min_price_gap_percent: float = 20.0
+) -> dict:
+    """
+    Find cross-market arbitrage opportunities.
+    Items/categories that are cheap in one market but expensive in another.
+    """
+    supabase = get_supabase()
+    markets = ["IT", "FR", "DE", "ES", "NL", "PL", "BE", "AT", "PT"]
+    
+    # Currency conversion rates to EUR
+    CURRENCY_RATES = {
+        "PL": 4.3,  # 1 EUR = 4.3 PLN
+        # Add more if needed (e.g., "CZ": 25.0 for Czech koruna)
+    }
+    
+    def to_eur(price: float, market: str) -> float:
+        """Convert price to EUR based on market."""
+        if market in CURRENCY_RATES:
+            return price / CURRENCY_RATES[market]
+        return price  # Already in EUR
+    
+    # Get recent active items
+    threshold = (datetime.now() - timedelta(days=14)).isoformat()
+    
+    query = supabase.table("items")\
+        .select("market, category, brand, price")\
+        .eq("status", "active")\
+        .gte("last_seen", threshold)
+    
+    if category:
+        query = query.eq("category", category)
+    
+    # Fetch all items
+    all_items = []
+    page_size = 1000
+    offset = 0
+    
+    while True:
+        result = query.range(offset, offset + page_size - 1).execute()
+        batch = result.data
+        if not batch:
+            break
+        all_items.extend(batch)
+        offset += page_size
+        if offset >= 50000:
+            break
+    
+    if not all_items:
+        return {
+            "opportunities": [],
+            "message": "Not enough data"
+        }
+    
+    # Group by category and calculate avg price per market (converted to EUR)
+    category_market_prices = {}
+    
+    for item in all_items:
+        cat = item.get("category")
+        market = item.get("market")
+        price = item.get("price", 0)
+        
+        if not cat or not market or price <= 0:
+            continue
+        
+        # Convert to EUR
+        price_eur = to_eur(price, market)
+        
+        if cat not in category_market_prices:
+            category_market_prices[cat] = {}
+        if market not in category_market_prices[cat]:
+            category_market_prices[cat][market] = []
+        
+        category_market_prices[cat][market].append(price_eur)
+    
+    # Find opportunities
+    opportunities = []
+    
+    for cat, market_prices in category_market_prices.items():
+        if len(market_prices) < 2:
+            continue
+        
+        # Calculate averages
+        market_avgs = {}
+        for market, prices in market_prices.items():
+            if len(prices) >= 3:  # Need minimum data
+                market_avgs[market] = {
+                    "avg_price": round(sum(prices) / len(prices), 2),
+                    "count": len(prices)
+                }
+        
+        if len(market_avgs) < 2:
+            continue
+        
+        # Find min and max markets
+        sorted_markets = sorted(market_avgs.items(), key=lambda x: x[1]["avg_price"])
+        cheapest = sorted_markets[0]
+        most_expensive = sorted_markets[-1]
+        
+        cheap_price = cheapest[1]["avg_price"]
+        expensive_price = most_expensive[1]["avg_price"]
+        
+        if cheap_price > 0:
+            price_gap_pct = round((expensive_price - cheap_price) / cheap_price * 100, 1)
+            
+            if price_gap_pct >= min_price_gap_percent:
+                opportunities.append({
+                    "category": cat,
+                    "buy_market": cheapest[0],
+                    "buy_price": cheap_price,
+                    "buy_count": cheapest[1]["count"],
+                    "sell_market": most_expensive[0],
+                    "sell_price": expensive_price,
+                    "sell_count": most_expensive[1]["count"],
+                    "price_gap_percent": price_gap_pct,
+                    "potential_profit": round(expensive_price - cheap_price, 2)
+                })
+    
+    # Sort by potential profit percentage
+    opportunities.sort(key=lambda x: x["price_gap_percent"], reverse=True)
+    
+    return {
+        "opportunities": opportunities[:20],  # Top 20
+        "total_found": len(opportunities),
+        "min_gap_threshold": min_price_gap_percent
+    }

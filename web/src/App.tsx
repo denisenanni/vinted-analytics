@@ -4,6 +4,8 @@ import { ResultsCard } from './components/ResultsCard';
 import { ItemsList } from './components/ItemsList';
 import { TrendsChart } from './components/TrendsChart';
 import { WhereToSell } from './components/WhereToSell';
+import { TimingInsights } from './components/TimingInsights';
+import { ArbitrageFinder } from './components/ArbitrageFinder';
 import {
   lookup,
   getTrends,
@@ -37,11 +39,13 @@ function formatCategoryName(category: string): string {
     .join(' ');
 }
 
-function getInitialTab(): 'search' | 'trends' | 'sold' | 'where-to-sell' {
+function getInitialTab(): 'search' | 'trends' | 'sold' | 'where-to-sell' | 'timing' | 'arbitrage' {
   const hash = window.location.hash.replace('#', '');
   if (hash === 'trends') return 'trends';
   if (hash === 'sold') return 'sold';
   if (hash === 'where-to-sell') return 'where-to-sell';
+  if (hash === 'timing') return 'timing';
+  if (hash === 'arbitrage') return 'arbitrage';
   return 'search';
 }
 
@@ -53,13 +57,13 @@ function App() {
   const [trendItems, setTrendItems] = useState<TrendingItem[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'search' | 'trends' | 'sold' | 'where-to-sell'>(getInitialTab);
+  const [activeTab, setActiveTab] = useState<'search' | 'trends' | 'sold' | 'where-to-sell' | 'timing' | 'arbitrage'>(getInitialTab);
   const [sold, setSold] = useState<SoldResponse | null>(null);
   const [soldMarket, setSoldMarket] = useState('IT');
   const [soldPeriod, setSoldPeriod] = useState('30d');
 
   // Update URL hash when tab changes
-  const handleTabChange = (tab: 'search' | 'trends' | 'sold' | 'where-to-sell') => {
+  const handleTabChange = (tab: 'search' | 'trends' | 'sold' | 'where-to-sell' | 'timing' | 'arbitrage') => {
     setActiveTab(tab);
     window.location.hash = tab;
   };
@@ -90,7 +94,7 @@ function App() {
     if (activeTab === 'sold' && !sold) {
       handleLoadSold(soldMarket, soldPeriod);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearch = async (params: {
@@ -251,6 +255,18 @@ function App() {
           onClick={() => handleTabChange('where-to-sell')}
         >
           Where to Sell
+        </button>
+        <button
+          className={activeTab === 'timing' ? 'active' : ''}
+          onClick={() => handleTabChange('timing')}
+        >
+          Timing
+        </button>
+        <button
+          className={activeTab === 'arbitrage' ? 'active' : ''}
+          onClick={() => handleTabChange('arbitrage')}
+        >
+          Arbitrage
         </button>
       </nav>
 
@@ -485,6 +501,10 @@ function App() {
         {activeTab === 'where-to-sell' && (
           <WhereToSell categories={categories} />
         )}
+
+        {activeTab === 'timing' && <TimingInsights />}
+
+        {activeTab === 'arbitrage' && <ArbitrageFinder categories={categories} />}
       </main>
 
       <footer className="footer">

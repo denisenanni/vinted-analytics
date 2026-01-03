@@ -136,3 +136,46 @@ class MarketProfitabilityResponse(BaseModel):
     brand: Optional[str]
     markets: List[MarketProfitability]
     recommendation: ProfitabilityRecommendation
+
+# Timing Insights
+class DayBreakdown(BaseModel):
+    day: str
+    sales: int
+    percentage: float
+
+
+class CategoryTrend(BaseModel):
+    category: str
+    this_week: int
+    last_week: int
+    change_percent: float
+
+
+class TimingInsightsResponse(BaseModel):
+    market: str
+    best_day: Optional[str]
+    day_breakdown: List[DayBreakdown]
+    trending_up: List[CategoryTrend]
+    trending_down: List[CategoryTrend]
+    total_sales_analyzed: int
+    message: Optional[str] = None
+
+
+# Arbitrage Finder
+class ArbitrageOpportunity(BaseModel):
+    category: str
+    buy_market: str
+    buy_price: float
+    buy_count: int
+    sell_market: str
+    sell_price: float
+    sell_count: int
+    price_gap_percent: float
+    potential_profit: float
+
+
+class ArbitrageResponse(BaseModel):
+    opportunities: List[ArbitrageOpportunity]
+    total_found: int
+    min_gap_threshold: float
+    message: Optional[str] = None

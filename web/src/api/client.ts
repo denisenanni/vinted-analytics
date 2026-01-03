@@ -230,3 +230,58 @@ export const getMarketProfitability = (category: string, brand?: string) =>
   api.get<MarketProfitabilityResponse>('/api/market-profitability', {
     params: { category, brand },
   });
+
+
+// Timing Insights
+export interface DayBreakdown {
+  day: string;
+  sales: number;
+  percentage: number;
+}
+
+export interface CategoryTrend {
+  category: string;
+  this_week: number;
+  last_week: number;
+  change_percent: number;
+}
+
+export interface TimingInsightsResponse {
+  market: string;
+  best_day: string | null;
+  day_breakdown: DayBreakdown[];
+  trending_up: CategoryTrend[];
+  trending_down: CategoryTrend[];
+  total_sales_analyzed: number;
+  message?: string;
+}
+
+export const getTimingInsights = (market: string, category?: string) =>
+  api.get<TimingInsightsResponse>('/api/timing-insights', {
+    params: { market, category },
+  });
+
+// Arbitrage
+export interface ArbitrageOpportunity {
+  category: string;
+  buy_market: string;
+  buy_price: number;
+  buy_count: number;
+  sell_market: string;
+  sell_price: number;
+  sell_count: number;
+  price_gap_percent: number;
+  potential_profit: number;
+}
+
+export interface ArbitrageResponse {
+  opportunities: ArbitrageOpportunity[];
+  total_found: number;
+  min_gap_threshold: number;
+  message?: string;
+}
+
+export const getArbitrageOpportunities = (category?: string, minGap: number = 20) =>
+  api.get<ArbitrageResponse>('/api/arbitrage', {
+    params: { category, min_gap: minGap },
+  });

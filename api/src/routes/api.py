@@ -2,9 +2,44 @@ from fastapi import APIRouter, Query
 from typing import Optional, List
 from ..services import analytics
 from ..models.schemas import LookupResponse, CompareResponse, TrendsResponse, SoldResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse, MarketProfitabilityResponse
+from ..models.schemas import (
+    LookupResponse, CompareResponse, TrendsResponse, SoldResponse, 
+    MarketProfitabilityResponse, TimingInsightsResponse, ArbitrageResponse
+)
 
 router = APIRouter(prefix="/api", tags=["analytics"])
 
+@router.get("/timing-insights", response_model=TimingInsightsResponse)
+async def timing_insights(
+    market: str = Query("IT", description="Market code"),
+    category: Optional[str] = Query(None, description="Category filter (optional)")
+):
+    """
+    Get timing insights for sales.
+    - Best day of week to list items
+    - Trending categories (up/down vs last week)
+    """
+    result = analytics.get_timing_insights(
+        category=category,
+        market=market
+    )
+    return result
+
+
+@router.get("/arbitrage", response_model=ArbitrageResponse)
+async def arbitrage_opportunities(
+    category: Optional[str] = Query(None, description="Category filter (optional)"),
+    min_gap: float = Query(20.0, description="Minimum price gap percentage")
+):
+    """
+    Find cross-market arbitrage opportunities.
+    Categories where prices differ significantly between markets.
+    """
+    result = analytics.get_arbitrage_opportunities(
+        category=category,
+        min_price_gap_percent=min_gap
+    )
+    return result
 
 @router.get("/lookup", response_model=LookupResponse)
 async def lookup(
