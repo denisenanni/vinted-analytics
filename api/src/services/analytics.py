@@ -16,6 +16,20 @@ def percentile(data: List[float], p: float) -> float:
     return sorted_data[f] * (c - k) + sorted_data[c] * (k - f)
 
 
+# Currency conversion constants
+CURRENCY_RATES = {
+    "PL": 4.3,  # 1 EUR = 4.3 PLN
+    # Add more if needed (e.g., "CZ": 25.0 for Czech koruna)
+}
+
+
+def to_eur(price: float, market: str) -> float:
+    """Convert price to EUR based on market."""
+    if market in CURRENCY_RATES:
+        return price / CURRENCY_RATES[market]
+    return price  # Already in EUR
+
+
 def get_market_profitability(
     category: str,
     brand: Optional[str] = None
@@ -82,14 +96,14 @@ def get_market_profitability(
         
         active = [i for i in items if i.get("status") == "active"]
         sold = [i for i in items if i.get("status") == "sold"]
-        
-        # Prices from sold items (actual selling prices)
-        sold_prices = [i["price"] for i in sold if i.get("price") and i["price"] > 0]
-        active_prices = [i["price"] for i in active if i.get("price") and i["price"] > 0]
-        
+
+        # Prices from sold items (actual selling prices) - convert to EUR
+        sold_prices = [to_eur(i["price"], market) for i in sold if i.get("price") and i["price"] > 0]
+        active_prices = [to_eur(i["price"], market) for i in active if i.get("price") and i["price"] > 0]
+
         # Use sold prices if available, otherwise active
         all_prices = sold_prices if sold_prices else active_prices
-        
+
         avg_selling_price = sum(all_prices) / len(all_prices) if all_prices else 0
         
         # Calculate suggested price ranges (percentiles)
@@ -299,7 +313,8 @@ def lookup_items(
             "recent_items": []
         }
 
-    prices = [i["price"] for i in items if i["price"]]
+    # Convert prices to EUR
+    prices = [to_eur(i["price"], i["market"]) for i in items if i["price"]]
     avg_price = sum(prices) / len(prices) if prices else 0
     min_price = min(prices) if prices else 0
     max_price = max(prices) if prices else 0
@@ -312,59 +327,66 @@ def lookup_items(
     else:
         demand_score = "low"
 
-    cache_key = f"{brand or ''}:{category or ''}:{size or ''}:{market or ''}"
-    cached = _market_stats_cache.get(cache_key)
-
-    if cached and datetime.now() < cached["expires_at"]:
-        best_markets = cached["best_markets"]
-        total_items = cached["total_items"]
-    else:
-        all_market_items = []
-        page_size = 1000
-        offset = 0
-
-        while True:
-            markets_query = supabase.table("items").select("market, price, favorites")
-            markets_query = apply_filters(markets_query)
-            markets_query = markets_query.range(offset, offset + page_size - 1)
-            markets_result = markets_query.execute()
-            batch = markets_result.data
-
-            if not batch:
-                break
-
-            all_market_items.extend(batch)
-            offset += page_size
-
-            if offset >= 50000:
-                break
-
-        market_stats = {}
-        for item in all_market_items:
-            m = item["market"]
-            if m not in market_stats:
-                market_stats[m] = {"count": 0, "prices": [], "favorites": []}
-            market_stats[m]["count"] += 1
-            market_stats[m]["prices"].append(item["price"] or 0)
-            market_stats[m]["favorites"].append(item["favorites"] or 0)
-
+    # Skip "Best Markets" calculation if market is already filtered
+    # (showing one market as "best" when it's the only one is redundant)
+    if market:
         best_markets = []
-        for m, stats in market_stats.items():
-            best_markets.append({
-                "market": m,
-                "count": stats["count"],
-                "avg_price": sum(stats["prices"]) / len(stats["prices"]) if stats["prices"] else 0,
-                "avg_favorites": sum(stats["favorites"]) / len(stats["favorites"]) if stats["favorites"] else 0
-            })
-        best_markets.sort(key=lambda x: x["count"], reverse=True)
+        total_items = len(items)
+    else:
+        cache_key = f"{brand or ''}:{category or ''}:{size or ''}:{market or ''}"
+        cached = _market_stats_cache.get(cache_key)
 
-        total_items = len(all_market_items)
+        if cached and datetime.now() < cached["expires_at"]:
+            best_markets = cached["best_markets"]
+            total_items = cached["total_items"]
+        else:
+            all_market_items = []
+            page_size = 1000
+            offset = 0
 
-        _market_stats_cache[cache_key] = {
-            "best_markets": best_markets,
-            "total_items": total_items,
-            "expires_at": datetime.now() + MARKET_STATS_TTL
-        }
+            while True:
+                markets_query = supabase.table("items").select("market, price, favorites")
+                markets_query = apply_filters(markets_query)
+                markets_query = markets_query.range(offset, offset + page_size - 1)
+                markets_result = markets_query.execute()
+                batch = markets_result.data
+
+                if not batch:
+                    break
+
+                all_market_items.extend(batch)
+                offset += page_size
+
+                if offset >= 50000:
+                    break
+
+            market_stats = {}
+            for item in all_market_items:
+                m = item["market"]
+                if m not in market_stats:
+                    market_stats[m] = {"count": 0, "prices": [], "favorites": []}
+                market_stats[m]["count"] += 1
+                # Convert price to EUR before storing
+                market_stats[m]["prices"].append(to_eur(item["price"] or 0, m))
+                market_stats[m]["favorites"].append(item["favorites"] or 0)
+
+            best_markets = []
+            for m, stats in market_stats.items():
+                best_markets.append({
+                    "market": m,
+                    "count": stats["count"],
+                    "avg_price": sum(stats["prices"]) / len(stats["prices"]) if stats["prices"] else 0,
+                    "avg_favorites": sum(stats["favorites"]) / len(stats["favorites"]) if stats["favorites"] else 0
+                })
+            best_markets.sort(key=lambda x: x["count"], reverse=True)
+
+            total_items = len(all_market_items)
+
+            _market_stats_cache[cache_key] = {
+                "best_markets": best_markets,
+                "total_items": total_items,
+                "expires_at": datetime.now() + MARKET_STATS_TTL
+            }
 
     return {
         "total_items": total_items,
@@ -410,7 +432,8 @@ def compare_markets(
         items = items_by_market.get(market, [])
 
         if items:
-            prices = [i["price"] for i in items if i["price"]]
+            # Convert prices to EUR
+            prices = [to_eur(i["price"], market) for i in items if i["price"]]
             sold = [i for i in items if i["status"] == "sold"]
             favorites = [i["favorites"] or 0 for i in items]
 
@@ -471,7 +494,8 @@ def get_trends(
             "has_more": False
         }
 
-    prices = [i["price"] for i in items if i["price"]]
+    # Convert prices to EUR
+    prices = [to_eur(i["price"], market) for i in items if i["price"]]
     avg_price = sum(prices) / len(prices) if prices else 0
 
     trending_items = []
@@ -479,7 +503,7 @@ def get_trends(
         trending_items.append({
             "vinted_id": item["vinted_id"],
             "title": item["title"],
-            "price": item["price"],
+            "price": to_eur(item["price"], market) if item["price"] else 0,
             "brand": item.get("brand"),
             "url": item.get("url"),
             "image_url": item.get("image_url"),
@@ -694,7 +718,7 @@ def get_sold_items(
         sold_items.append({
             "vinted_id": item["vinted_id"],
             "title": item["title"],
-            "price": item["price"],
+            "price": to_eur(item["price"], market) if item["price"] else 0,
             "brand": item.get("brand"),
             "market": item["market"],
             "first_seen": item.get("first_seen"),
@@ -702,7 +726,8 @@ def get_sold_items(
             "days_to_sell": days_to_sell
         })
 
-    prices = [i["price"] for i in items if i["price"]]
+    # Convert prices to EUR
+    prices = [to_eur(i["price"], market) for i in items if i["price"]]
     avg_price = sum(prices) / len(prices) if prices else 0
     avg_days = sum(days_to_sell_list) / len(days_to_sell_list) if days_to_sell_list else None
 
@@ -854,20 +879,7 @@ def get_arbitrage_opportunities(
     Items/categories that are cheap in one market but expensive in another.
     """
     supabase = get_supabase()
-    markets = ["IT", "FR", "DE", "ES", "NL", "PL", "BE", "AT", "PT"]
-    
-    # Currency conversion rates to EUR
-    CURRENCY_RATES = {
-        "PL": 4.3,  # 1 EUR = 4.3 PLN
-        # Add more if needed (e.g., "CZ": 25.0 for Czech koruna)
-    }
-    
-    def to_eur(price: float, market: str) -> float:
-        """Convert price to EUR based on market."""
-        if market in CURRENCY_RATES:
-            return price / CURRENCY_RATES[market]
-        return price  # Already in EUR
-    
+
     # Get recent active items
     threshold = (datetime.now() - timedelta(days=14)).isoformat()
     
