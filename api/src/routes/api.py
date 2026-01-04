@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
 from typing import Optional
 from ..services import analytics
 from ..models.schemas import (
@@ -388,4 +388,7 @@ async def db_stats():
 
     Use this endpoint for monitoring data collection health and debugging issues.
     """
-    return analytics.get_db_stats()
+    try:
+        return analytics.get_db_stats()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

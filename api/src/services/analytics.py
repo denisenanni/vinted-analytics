@@ -524,10 +524,22 @@ def get_trends(
 def get_db_stats() -> dict:
     """Get database statistics for debugging and consistency checks."""
     supabase = get_supabase()
-    
-    # Get counts by market and status
-    result = supabase.table("items").select("market, status, favorites").execute()
-    items = result.data
+
+    # Get counts by market and status with pagination
+    all_items = []
+    page_size = 1000
+    offset = 0
+    while True:
+        result = supabase.table("items").select("market, status, favorites")\
+            .range(offset, offset + page_size - 1).execute()
+        if not result.data:
+            break
+        all_items.extend(result.data)
+        offset += page_size
+        if offset >= 50000:  # Safety limit
+            break
+
+    items = all_items
     
     stats_by_market = {}
     for item in items:
