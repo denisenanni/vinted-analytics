@@ -331,7 +331,11 @@ def lookup_items(
     # (showing one market as "best" when it's the only one is redundant)
     if market:
         best_markets = []
-        total_items = len(items)
+        # Get actual count from database (not limited to 500)
+        count_query = supabase.table("items").select("*", count="exact", head=True)
+        count_query = apply_filters(count_query)
+        count_result = count_query.execute()
+        total_items = count_result.count
     else:
         cache_key = f"{brand or ''}:{category or ''}:{size or ''}:{market or ''}"
         cached = _market_stats_cache.get(cache_key)
@@ -380,7 +384,11 @@ def lookup_items(
                 })
             best_markets.sort(key=lambda x: x["count"], reverse=True)
 
-            total_items = len(all_market_items)
+            # Get actual count from database
+            count_query = supabase.table("items").select("*", count="exact", head=True)
+            count_query = apply_filters(count_query)
+            count_result = count_query.execute()
+            total_items = count_result.count
 
             _market_stats_cache[cache_key] = {
                 "best_markets": best_markets,
