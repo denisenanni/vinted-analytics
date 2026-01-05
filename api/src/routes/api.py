@@ -6,6 +6,7 @@ from ..models.schemas import (
     MarketProfitabilityResponse, TimingInsightsResponse, ArbitrageResponse
 )
 from ..config.responses import STANDARD_RESPONSES
+from ..config.cache import cache_response
 
 router = APIRouter(prefix="/api")
 
@@ -16,6 +17,7 @@ router = APIRouter(prefix="/api")
     tags=["Trends & Insights"],
     summary="Best day to list items"
 )
+@cache_response()
 async def timing_insights(
     market: str = Query("IT", description="Market code"),
     category: Optional[str] = Query(None, description="Category filter (optional)")
@@ -45,6 +47,7 @@ async def timing_insights(
     tags=["Profitability"],
     summary="Cross-market price gaps"
 )
+@cache_response()
 async def arbitrage_opportunities(
     category: Optional[str] = Query(None, description="Category filter (optional)"),
     min_gap: float = Query(20.0, description="Minimum price gap percentage")
@@ -78,6 +81,7 @@ async def arbitrage_opportunities(
     tags=["Lookup & Search"],
     summary="Find similar items and pricing stats"
 )
+@cache_response()
 async def lookup(
     brand: Optional[str] = Query(None, description="Brand name (partial match)"),
     category: Optional[str] = Query(None, description="Category path, e.g. women/dresses"),
@@ -124,6 +128,7 @@ async def lookup(
     tags=["Lookup & Search"],
     summary="Compare same item across markets"
 )
+@cache_response()
 async def compare(
     brand: Optional[str] = Query(None, description="Brand name"),
     category: Optional[str] = Query(None, description="Category path"),
@@ -163,6 +168,7 @@ async def compare(
     tags=["Trends & Insights"],
     summary="Get trending items by popularity"
 )
+@cache_response()
 async def trends(
     market: str = Query("IT", description="Market code"),
     categories: Optional[str] = Query(None, description="Comma-separated category paths"),
@@ -209,6 +215,7 @@ async def trends(
     tags=["Trends & Insights"],
     summary="Get recently sold items"
 )
+@cache_response()
 async def sold(
     brand: Optional[str] = Query(None, description="Brand name"),
     category: Optional[str] = Query(None, description="Category path"),
@@ -252,6 +259,7 @@ async def sold(
     tags=["Profitability"],
     summary="Best markets for selling"
 )
+@cache_response()
 async def market_profitability(
     category: str = Query(..., description="Category path, e.g. women/trousers-and-leggings"),
     brand: Optional[str] = Query(None, description="Brand name (optional)")
@@ -342,6 +350,7 @@ async def categories():
     tags=["Trends & Insights"],
     summary="Hottest category per market"
 )
+@cache_response()
 async def hot_categories():
     """
     Get the hottest (most trending) category for each market.

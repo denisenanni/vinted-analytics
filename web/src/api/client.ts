@@ -8,7 +8,7 @@ export const api = axios.create({
 
 // Simple in-memory cache for API responses
 const cache = new Map<string, { data: unknown; expiresAt: number }>();
-const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+const CACHE_TTL = 12 * 60 * 60 * 1000; // 12 hours (backend has 5h cache, frontend adds extra layer)
 
 function getCacheKey(url: string, params?: Record<string, unknown>): string {
   return `${url}?${JSON.stringify(params || {})}`;
@@ -101,7 +101,7 @@ export interface CompareResponse {
 }
 
 export const lookup = (params: LookupParams) =>
-  api.get<LookupResponse>('/api/lookup', { params });
+  cachedGet<LookupResponse>('/api/lookup', params);
 
 export interface CategoriesResponse {
   categories: {
@@ -135,7 +135,7 @@ export const getCategories = () =>
   cachedGet<CategoriesResponse>('/api/categories', {});
 
 export const compare = (brand?: string, category?: string, markets?: string) =>
-  api.get<CompareResponse>('/api/compare', { params: { brand, category, markets } });
+  cachedGet<CompareResponse>('/api/compare', { brand, category, markets });
 
 export interface HotCategoryInfo {
   category: string;
@@ -233,9 +233,7 @@ export interface MarketProfitabilityResponse {
 }
 
 export const getMarketProfitability = (category: string, brand?: string) =>
-  api.get<MarketProfitabilityResponse>('/api/market-profitability', {
-    params: { category, brand },
-  });
+  cachedGet<MarketProfitabilityResponse>('/api/market-profitability', { category, brand });
 
 
 // Timing Insights
@@ -263,9 +261,7 @@ export interface TimingInsightsResponse {
 }
 
 export const getTimingInsights = (market: string, category?: string) =>
-  api.get<TimingInsightsResponse>('/api/timing-insights', {
-    params: { market, category },
-  });
+  cachedGet<TimingInsightsResponse>('/api/timing-insights', { market, category });
 
 // Arbitrage
 export interface ArbitrageOpportunity {
@@ -288,6 +284,4 @@ export interface ArbitrageResponse {
 }
 
 export const getArbitrageOpportunities = (category?: string, minGap: number = 20) =>
-  api.get<ArbitrageResponse>('/api/arbitrage', {
-    params: { category, min_gap: minGap },
-  });
+  cachedGet<ArbitrageResponse>('/api/arbitrage', { category, min_gap: minGap });
