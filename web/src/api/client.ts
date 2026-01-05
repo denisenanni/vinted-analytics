@@ -101,7 +101,7 @@ export interface CompareResponse {
 }
 
 export const lookup = (params: LookupParams) =>
-  cachedGet<LookupResponse>('/api/lookup', params);
+  cachedGet<LookupResponse>('/api/lookup', params as Record<string, unknown>);
 
 export interface CategoriesResponse {
   categories: {
