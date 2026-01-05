@@ -161,11 +161,18 @@ export interface SoldItem {
   days_to_sell: number | null;
 }
 
+export interface CategoryBreakdown {
+  category: string;
+  count: number;
+  percentage: number;
+}
+
 export interface SoldResponse {
   query: Record<string, string | null>;
   total_sold: number;
   avg_price: number;
   avg_days_to_sell: number | null;
+  category_breakdown: CategoryBreakdown[];
   items: SoldItem[];
 }
 
@@ -176,9 +183,7 @@ export const getSold = (
   period = '30d',
   limit = 50
 ) =>
-  api.get<SoldResponse>('/api/sold', {
-    params: { brand, category, market, period, limit },
-  });
+  cachedGet<SoldResponse>('/api/sold', { brand, category, market, period, limit });
 
 export interface ScoreBreakdown {
   price: number;

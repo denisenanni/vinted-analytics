@@ -664,6 +664,69 @@ body {
   margin-top: 0.25rem;
 }
 
+.category-breakdown {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.category-breakdown h3 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.125rem;
+  color: #1a1a1a;
+}
+
+.pie-chart-container {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pie-chart {
+  width: 250px;
+  height: 250px;
+  flex-shrink: 0;
+}
+
+.pie-chart path {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.pie-chart path:hover {
+  opacity: 0.8;
+}
+
+.pie-chart-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  color: #333;
+  font-weight: 500;
+}
+
 .sold-items-list {
   display: flex;
   flex-direction: column;

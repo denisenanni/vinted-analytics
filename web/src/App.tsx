@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SearchForm } from './components/SearchForm';
 import { ResultsCard } from './components/ResultsCard';
 import { ItemsList } from './components/ItemsList';
@@ -78,7 +78,14 @@ function App() {
   const [sortBy, setSortBy] = useState<'favorites' | 'price_asc' | 'price_desc' | 'newest' | 'oldest'>('favorites');
   const ITEMS_PER_PAGE = 20;
 
+  // Prevent duplicate API calls in StrictMode
+  const initialLoadDone = useRef(false);
+  const tabDataLoadDone = useRef(false);
+
   useEffect(() => {
+    if (initialLoadDone.current) return;
+    initialLoadDone.current = true;
+
     getCategories()
       .then((res) => setCategories(res.data))
       .catch(console.error);
@@ -89,11 +96,17 @@ function App() {
 
   // Load trends data on mount if starting on trends tab
   useEffect(() => {
-    if (activeTab === 'trends' && !trends) {
-      handleLoadTrends(selectedMarket, selectedCategories, true);
-    }
-    if (activeTab === 'sold' && !sold) {
-      handleLoadSold(soldMarket, soldPeriod);
+    if (tabDataLoadDone.current) return;
+
+    if (initialLoadDone.current) {
+      tabDataLoadDone.current = true;
+
+      if (activeTab === 'trends' && !trends) {
+        handleLoadTrends(selectedMarket, selectedCategories, true);
+      }
+      if (activeTab === 'sold' && !sold) {
+        handleLoadSold(soldMarket, soldPeriod);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -507,6 +520,112 @@ function App() {
                     <span className="stat-label">Avg Days to Sell</span>
                   </div>
                 </div>
+
+                {sold.category_breakdown && sold.category_breakdown.length > 0 && (
+                  <div className="category-breakdown">
+                    <h3>Sales by Category</h3>
+                    <div className="pie-chart-container">
+                      <svg viewBox="0 0 200 200" className="pie-chart">
+                        {(() => {
+                          let currentAngle = 0;
+                          const colors = [
+                            '#16a085', '#2ecc71', '#3498db', '#9b59b6', '#f39c12',
+                            '#e74c3c', '#1abc9c', '#27ae60', '#2980b9', '#8e44ad',
+                            '#f1c40f', '#e67e22', '#34495e', '#95a5a6', '#7f8c8d'
+                          ];
+
+                          // Get top 10 and calculate "Other"
+                          const top10 = sold.category_breakdown.slice(0, 10);
+                          const top10Total = top10.reduce((sum, cat) => sum + cat.percentage, 0);
+                          const chartData = [...top10];
+
+                          if (top10Total < 100) {
+                            chartData.push({
+                              category: 'Other',
+                              count: 0,
+                              percentage: Math.round((100 - top10Total) * 10) / 10
+                            });
+                          }
+
+                          return chartData.map((cat, index) => {
+                            const percentage = cat.percentage;
+                            const angle = (percentage / 100) * 360;
+                            const startAngle = currentAngle;
+                            const endAngle = currentAngle + angle;
+                            currentAngle = endAngle;
+
+                            // Convert angles to radians
+                            const startRad = (startAngle - 90) * (Math.PI / 180);
+                            const endRad = (endAngle - 90) * (Math.PI / 180);
+
+                            const radius = 80;
+                            const x1 = 100 + radius * Math.cos(startRad);
+                            const y1 = 100 + radius * Math.sin(startRad);
+                            const x2 = 100 + radius * Math.cos(endRad);
+                            const y2 = 100 + radius * Math.sin(endRad);
+
+                            const largeArc = angle > 180 ? 1 : 0;
+
+                            const pathData = [
+                              `M 100 100`,
+                              `L ${x1} ${y1}`,
+                              `A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`,
+                              `Z`
+                            ].join(' ');
+
+                            return (
+                              <path
+                                key={cat.category}
+                                d={pathData}
+                                fill={colors[index % colors.length]}
+                                stroke="#fff"
+                                strokeWidth="2"
+                              >
+                                <title>{cat.category}: {cat.percentage}%</title>
+                              </path>
+                            );
+                          });
+                        })()}
+                      </svg>
+                      <div className="pie-chart-legend">
+                        {(() => {
+                          const colors = [
+                            '#16a085', '#2ecc71', '#3498db', '#9b59b6', '#f39c12',
+                            '#e74c3c', '#1abc9c', '#27ae60', '#2980b9', '#8e44ad',
+                            '#f1c40f', '#e67e22', '#34495e', '#95a5a6', '#7f8c8d'
+                          ];
+
+                          const top10 = sold.category_breakdown.slice(0, 10);
+                          const top10Total = top10.reduce((sum, cat) => sum + cat.percentage, 0);
+                          const legendData = [...top10];
+
+                          if (top10Total < 100) {
+                            legendData.push({
+                              category: 'Other',
+                              count: 0,
+                              percentage: Math.round((100 - top10Total) * 10) / 10
+                            });
+                          }
+
+                          return legendData.map((cat, index) => (
+                            <div key={cat.category} className="legend-item">
+                              <span
+                                className="legend-color"
+                                style={{ backgroundColor: colors[index % colors.length] }}
+                              ></span>
+                              <span className="legend-label">
+                                {cat.category === 'Other'
+                                  ? 'Other'
+                                  : cat.category.replace('women/', 'W: ').replace('men/', 'M: ')}
+                                ({cat.percentage}%)
+                              </span>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="sold-items-list">
                   {sold.items.map((item) => (

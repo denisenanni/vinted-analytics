@@ -145,6 +145,12 @@ class SoldItem(BaseModel):
     )
 
 
+class CategoryBreakdown(BaseModel):
+    category: str = Field(..., description="Category name", example="women/dresses")
+    count: int = Field(..., description="Number of items sold in this category", example=150)
+    percentage: float = Field(..., description="Percentage of total sold items", example=15.5)
+
+
 class SoldResponse(BaseModel):
     query: dict = Field(..., description="Search parameters used", example={"brand": "Zara", "market": "IT"})
     total_sold: int = Field(..., description="Total sold items found", example=87)
@@ -153,6 +159,10 @@ class SoldResponse(BaseModel):
         None,
         description="Average days to sell. Only available when first_seen data exists.",
         example=14.2
+    )
+    category_breakdown: List[CategoryBreakdown] = Field(
+        default=[],
+        description="Breakdown of sold items by category with percentages"
     )
     items: List[SoldItem] = Field(..., description="Recently sold items")
 

@@ -717,6 +717,21 @@ def get_sold_items(
     result = query.order("sold_at", desc=True).limit(limit).execute()
     items = result.data
 
+    # Get actual total count (not limited to 50)
+    count_query = supabase.table("items")\
+        .select("*", count="exact", head=True)\
+        .eq("market", market)\
+        .eq("status", "sold")\
+        .gte("sold_at", threshold)
+
+    if brand:
+        count_query = count_query.ilike("brand", f"%{brand}%")
+    if category:
+        count_query = count_query.eq("category", category)
+
+    count_result = count_query.execute()
+    total_sold = count_result.count
+
     sold_items = []
     days_to_sell_list = []
 
@@ -751,10 +766,53 @@ def get_sold_items(
     avg_price = sum(prices) / len(prices) if prices else 0
     avg_days = sum(days_to_sell_list) / len(days_to_sell_list) if days_to_sell_list else None
 
+    # Get category breakdown for all sold items in this period (paginated)
+    category_breakdown = {}
+    all_sold_items = []
+    page_size = 1000
+    offset = 0
+
+    while offset < 50000:  # Safety limit
+        breakdown_query = supabase.table("items")\
+            .select("category")\
+            .eq("market", market)\
+            .eq("status", "sold")\
+            .gte("sold_at", threshold)\
+            .range(offset, offset + page_size - 1)
+
+        if brand:
+            breakdown_query = breakdown_query.ilike("brand", f"%{brand}%")
+        if category:
+            breakdown_query = breakdown_query.eq("category", category)
+
+        breakdown_result = breakdown_query.execute()
+        if not breakdown_result.data:
+            break
+
+        all_sold_items.extend(breakdown_result.data)
+        offset += page_size
+
+    # Count by category
+    for item in all_sold_items:
+        cat = item.get("category") or "Unknown"
+        category_breakdown[cat] = category_breakdown.get(cat, 0) + 1
+
+    # Convert to percentage
+    total_for_breakdown = len(all_sold_items)
+    category_percentages = []
+    if total_for_breakdown > 0:
+        for cat, count in sorted(category_breakdown.items(), key=lambda x: x[1], reverse=True):
+            category_percentages.append({
+                "category": cat,
+                "count": count,
+                "percentage": round((count / total_for_breakdown) * 100, 1)
+            })
+
     return {
-        "total_sold": len(items),
+        "total_sold": total_sold,
         "avg_price": round(avg_price, 2),
         "avg_days_to_sell": round(avg_days, 1) if avg_days else None,
+        "category_breakdown": category_percentages,
         "items": sold_items
     }
 

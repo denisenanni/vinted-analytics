@@ -240,6 +240,7 @@ async def sold(
         total_sold=result["total_sold"],
         avg_price=result["avg_price"],
         avg_days_to_sell=result["avg_days_to_sell"],
+        category_breakdown=result["category_breakdown"],
         items=result["items"]
     )
 
