@@ -1,14 +1,12 @@
 # Optimized: Daily run with top 10 categories to stay within GitHub Actions limits
-name: Scheduled Scrape
+name: Scrape Vinted
 
 on:
-  schedule:
-    - cron: '0 6 * * *'  # Daily at 6 AM UTC
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:  # Triggered by API or manually
 
 jobs:
   scrape:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     strategy:
       matrix:

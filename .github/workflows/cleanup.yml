@@ -1,9 +1,7 @@
 name: Daily Cleanup
 
 on:
-  schedule:
-    - cron: '0 3 * * *'  # Run at 3 AM UTC daily
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:  # Triggered by API or manually
 
 jobs:
   cleanup:
