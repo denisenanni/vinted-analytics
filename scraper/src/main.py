@@ -56,7 +56,7 @@ CATEGORIES = [
     "women/outerwear",
     "women/suits-and-blazers",
     "women/activewear",
-    "women/shorts-and-cropped-trousers"
+    "women/shorts-and-cropped-trousers",
     # Women's shoes
     "women/boots",
     "women/heels",

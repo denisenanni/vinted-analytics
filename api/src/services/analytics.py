@@ -483,15 +483,21 @@ def get_trends(
     days = int(period.replace("d", "")) if period.endswith("d") else 7
     threshold = (datetime.now() - timedelta(days=days)).isoformat()
 
-    query = supabase.table("items").select("*", count="exact").eq("market", market).gte("last_seen", threshold)
+    # Select specific columns from the start - only ONE .select() call
+    query = supabase.table("items").select(
+        "vinted_id, title, price, brand, url, image_url, favorites, market, category, first_seen",
+        count="exact"
+    ).eq("market", market).gte("last_seen", threshold)
 
     if categories and len(categories) > 0:
         query = query.in_("category", categories)
 
     query = query.gt("favorites", 0)
 
-    result = query.order("favorites", desc=True).range(offset, offset + limit - 1).execute()
+    # No .select() here - just order, limit, offset, execute
+    result = query.order("favorites", desc=True).limit(limit).offset(offset).execute()
     items = result.data
+    
     total_count = result.count or len(items)
 
     if not items:
@@ -527,8 +533,6 @@ def get_trends(
         "trending_items": trending_items,
         "has_more": offset + limit < total_count
     }
-
-
 def get_db_stats() -> dict:
     """Get database statistics for debugging and consistency checks."""
     supabase = get_supabase()
@@ -987,6 +991,8 @@ def get_arbitrage_opportunities(
     if not all_items:
         return {
             "opportunities": [],
+            "total_found": 0,
+            "min_gap_threshold": min_price_gap_percent,
             "message": "Not enough data"
         }
     
