@@ -46,3 +46,4 @@ jobs:
           python -m src.main --market ${{ matrix.market }} --category men/jeans --pages 2
           python -m src.main --market ${{ matrix.market }} --category women/jewellery --pages 2
           python -m src.main --market ${{ matrix.market }} --category men/watches --pages 2
+          python -m src.main --market ${{ matrix.market }} --category women/shorts-and-cropped-trousers --pages 2
